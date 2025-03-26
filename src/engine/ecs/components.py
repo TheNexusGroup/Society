@@ -9,11 +9,12 @@ class Component:
 
 @dataclass
 class RenderComponent(Component):
-    """Component for rendering entities"""
-    asset: Any
-    position: Tuple[int, int]
+    """Component for entity rendering"""
+    asset: Any  # Asset or Animation
+    position: Tuple[float, float] = (0.0, 0.0)
     size: Tuple[int, int] = (64, 64)
     visible: bool = True
+    z_index: int = 0
 
 @dataclass
 class AnimationComponent(Component):
@@ -35,6 +36,7 @@ class BehaviorComponent(Component):
     """Component for entity behavior and AI"""
     state: str = "idle"
     target: Optional[int] = None  # Target entity ID
+    target_action: Optional[str] = None  # Action chosen by Q-learning
     action_cooldown: int = 0
     properties: Dict[str, Any] = field(default_factory=dict)
 

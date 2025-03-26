@@ -2,16 +2,22 @@
 
 import pygame
 import sys
-from .render import Renderer
 from .world import World
 from .assetmanager import AssetManager
+from .ecs.system import SpatialDebugSystem
+from .renderer.manager import RenderManager
 
-class Simulation(Renderer, World):
+class Simulation(World):
     def __init__(self, width=1600, height=1200):
+        # Initialize pygame
+        pygame.init()
+        self.screen = pygame.display.set_mode((width, height))
+        pygame.display.set_caption("Societal Simulation")
+        
         # Initialize the asset manager first
         self.asset_manager = AssetManager()
         
-        Renderer.__init__(self, width, height)
+        # Initialize World with screen dimensions
         World.__init__(self, width, height)
         
         # Pass screen to world
@@ -19,6 +25,11 @@ class Simulation(Renderer, World):
         
         # Set up systems after the screen is ready
         self.setup_systems()
+        
+        # Add spatial debug system
+        self.spatial_debug = SpatialDebugSystem(self.ecs, self.screen)
+        self.ecs.add_system(self.spatial_debug)
+        
         self.clock = pygame.time.Clock()
         self.running = False
         self.setup_world()
@@ -26,14 +37,18 @@ class Simulation(Renderer, World):
     def run(self):
         self.running = True
         while self.running:
+            # Handle events
             for event in pygame.event.get():
-                if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                     self.running = False
-                    
-            # Clear the screen before rendering
-            self.format_display()
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                    # Toggle spatial debug view
+                    self.spatial_debug.enabled = not self.spatial_debug.enabled
+            
+            # Update world (includes rendering via ECS systems)
             self.update_world()
 
+            # Flip display
             pygame.display.flip()
             self.clock.tick(60)
             

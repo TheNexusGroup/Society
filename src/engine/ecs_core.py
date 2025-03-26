@@ -11,6 +11,7 @@ class ECS:
         self.entities: Dict[int, Entity] = {}
         self.components: Dict[str, Dict[int, Component]] = {}
         self.systems: List[Any] = []
+        self.systems_by_name: Dict[str, Any] = {}  # For easy lookup
         
     def create_entity(self) -> int:
         """Create a new entity and return its ID"""
@@ -56,6 +57,14 @@ class ECS:
     def add_system(self, system):
         """Add a system to the world"""
         self.systems.append(system)
+        
+        # Store system by class name for easy lookup
+        system_name = system.__class__.__name__.lower().replace('system', '')
+        self.systems_by_name[system_name] = system
+        
+    def get_system(self, name: str):
+        """Get a system by name"""
+        return self.systems_by_name.get(name)
         
     def update(self, dt: float):
         """Update all systems"""

@@ -1,5 +1,8 @@
 import random
 import math
+import pygame
+from typing import List, Tuple, Dict, Any
+from ..renderer.manager import RenderManager
 
 class System:
     """Base class for all systems"""
@@ -11,23 +14,61 @@ class System:
         pass
 
 class RenderSystem(System):
-    """System for rendering entities with RenderComponent"""
+    """System for rendering entities with RenderComponent using optimized batching"""
     
     def __init__(self, world, screen):
         super().__init__(world)
         self.screen = screen
+        self.render_manager = RenderManager(screen)
     
     def update(self, dt):
+        # Clear batches for this frame
+        self.render_manager.clear()
+        
+        # Batch visible entities for efficient rendering
+        self._batch_visible_entities()
+        
+        # Perform the actual rendering
+        self.render_manager.render()
+        
+    def _batch_visible_entities(self):
+        """Batch visible entities for efficient rendering"""
         # Get all entities with RenderComponent
         for entity_id, component in self.world.get_components_by_type("render").items():
             # Skip if not visible
             if not component.visible:
                 continue
                 
-            # Position the asset and render it
+            # Get transform component for position
+            transform = self.world.get_component(entity_id, "transform")
+            if not transform:
+                continue
+                
+            # Get the asset
             asset = component.asset
-            asset.set_position(*component.position)
-            asset.render(self.screen)
+            
+            # Create a unique texture ID (for animations we'll need the frame)
+            if hasattr(asset, 'image'):
+                # Regular asset
+                texture_id = (asset.image, entity_id)
+                self.render_manager.add_to_batch(
+                    texture_id, 
+                    transform.position,
+                    None,
+                    pygame.Rect(transform.position[0], transform.position[1], 
+                              component.size[0], component.size[1])
+                )
+            elif hasattr(asset, 'images') and asset.images:
+                # Animation - use current frame
+                current_image = asset.images[asset.current_frame]
+                texture_id = (current_image, entity_id, asset.current_frame)
+                self.render_manager.add_to_batch(
+                    texture_id,
+                    transform.position,
+                    None,
+                    pygame.Rect(transform.position[0], transform.position[1], 
+                              component.size[0], component.size[1])
+                )
 
 class AnimationSystem(System):
     """System for updating entity animations"""
@@ -102,6 +143,7 @@ class BehaviorSystem(System):
                     # Set target and change state
                     behavior.target = food_id
                     behavior.state = "seeking_food"
+                    behavior.target_action = "eat"  # Set the RL action
                     
                     # Calculate direction to food
                     fx, fy = food_transform.position
@@ -128,11 +170,14 @@ class BehaviorSystem(System):
                         properties["hunger"] = max(0, properties["hunger"] - 30)
                         behavior.state = "idle"
                         behavior.target = None
+                        behavior.target_action = None
                         transform.velocity = (0, 0)
                         
-                        # Remove the food entity
-                        # This would need to be handled by a message system
-                        # or a separate food system
+                        # Get the entity from the world to actually remove it
+                        for entity in self.world.entities:
+                            if hasattr(entity, 'ecs_id') and entity.ecs_id == target_id:
+                                self.world.remove_entity(entity)
+                                break
                     else:
                         # Keep moving toward food
                         transform.velocity = (dx/distance * 50, dy/distance * 50)
@@ -140,4 +185,20 @@ class BehaviorSystem(System):
                     # Target no longer exists
                     behavior.state = "idle"
                     behavior.target = None
+                    behavior.target_action = None
                     transform.velocity = (0, 0)
+
+class SpatialDebugSystem(System):
+    """System for visualizing spatial partitioning grid for debugging"""
+    
+    def __init__(self, world, screen):
+        super().__init__(world)
+        self.screen = screen
+        self.cell_color = (100, 100, 200, 50)  # Semi-transparent blue
+        self.grid_color = (50, 50, 150)  # Darker blue for grid lines
+        self.entity_colors = {
+            "agent": (255, 100, 100),    # Red for agents
+            "food": (100, 255, 100),     # Green for food
+            "work": (100, 100, 255)      # Blue for workplaces
+        }
+        self.enabled = False

@@ -1,9 +1,10 @@
 from ..population.types import Agent, WorkPlace, Food
 from .ecs_core import ECS
-from .ecs.components import RenderComponent, AnimationComponent, TransformComponent, BehaviorComponent
+from .ecs.components import RenderComponent, AnimationComponent, TransformComponent, BehaviorComponent, TagComponent
 from .ecs.system import RenderSystem, AnimationSystem, MovementSystem, BehaviorSystem
 from .spatial_system.grid import SpatialGrid
 from .spatial_system.system import SpatialSystem
+from .constants import EntityType
 
 class World:
     def __init__(self, width, height):
@@ -11,9 +12,9 @@ class World:
         self.height = height
         self.entities = []
         self.population = []
-        self.population_size = 100
-        self.food_count = 20
-        self.work_count = 10
+        self.population_size = 25
+        self.food_count = 5
+        self.work_count = 3
         self.world_screen = None  # Will be set by Simulation
         
         # Initialize ECS world
@@ -72,6 +73,22 @@ class World:
         
         # Add entity to spatial grid
         self.spatial_grid.insert(entity_id, entity.position[0], entity.position[1])
+        
+        # Add tag component based on entity type
+        tag_value = None
+        if hasattr(entity, 'genome'):
+            tag_value = "agent"
+        elif entity.entity_type == EntityType.FOOD:
+            tag_value = "food"
+        elif entity.entity_type == EntityType.WORK:
+            tag_value = "work"
+        
+        if tag_value:
+            self.ecs.add_component(
+                entity_id,
+                "tag",
+                TagComponent(entity_id, tag=tag_value)
+            )
         
         # Add render component for main asset
         main_asset = entity.get_asset(entity.entity_type.value)
