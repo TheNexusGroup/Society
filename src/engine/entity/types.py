@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Tuple, Optional
-import numpy as np
-from ..engine.entity import Entity, EntityType
+from typing import Dict, Tuple, Optional
+from .entity import Entity
+from ..constants import EntityType
 import random
 import pygame
 
@@ -60,6 +60,7 @@ class Agent(Entity):
         position = (random.randint(0, screen.get_width()), random.randint(0, screen.get_height()))
         entity_type = EntityType.PERSON_MALE if self.genome.gender == Gender.MALE else EntityType.PERSON_FEMALE
         super().__init__(entity_type=entity_type, position=position)
+        self.id = idx
         self.screen = screen
         self.age = 0
         self.energy = 100.0
@@ -72,6 +73,24 @@ class Agent(Entity):
         self.current_action = None
         self.mate_target = None
         self.size = (32, 32)
+
+    def __hash__(self):
+        """Make Agent hashable by using its ID"""
+        return hash(self.id if hasattr(self, 'id') else id(self))
+    
+    def __eq__(self, other):
+        """Equality check to complement the hash method"""
+        if not isinstance(other, Agent):
+            return False
+        return (hasattr(self, 'id') and hasattr(other, 'id') and 
+                self.id == other.id)
+    
+    def clear_references(self):
+        """Clear any references that might cause memory leaks"""
+        # Reset attributes that might hold references
+        self.assets = {}
+        if hasattr(self, 'target'):
+            self.target = None
 
     def get_state_representation(self) -> str:
         """Returns a string representation of the agent's current state for Q-learning"""
@@ -106,6 +125,20 @@ class WorkPlace(Entity):
     def update(self):
         self.render_all()
 
+    def __hash__(self):
+        """Make WorkPlace hashable by using its memory ID"""
+        return hash(id(self))
+    
+    def __eq__(self, other):
+        """Equality check to complement the hash method"""
+        if not isinstance(other, WorkPlace):
+            return False
+        return id(self) == id(other)
+    
+    def clear_references(self):
+        """Clear any references that might cause memory leaks"""
+        self.assets = {}
+
 class Food(Entity):
     def __init__(self, screen: pygame.Surface):
         self.entity_type = EntityType.FOOD
@@ -116,3 +149,17 @@ class Food(Entity):
     
     def update(self):
         self.render_all()
+
+    def __hash__(self):
+        """Make Food hashable by using its memory ID"""
+        return hash(id(self))
+    
+    def __eq__(self, other):
+        """Equality check to complement the hash method"""
+        if not isinstance(other, Food):
+            return False
+        return id(self) == id(other)
+    
+    def clear_references(self):
+        """Clear any references that might cause memory leaks"""
+        self.assets = {}

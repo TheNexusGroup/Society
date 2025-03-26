@@ -3,36 +3,38 @@
 import pygame
 import sys
 from .world import World
-from .assetmanager import AssetManager
+from .assets.manager import AssetManager
 from .ecs.system import SpatialDebugSystem
 from .renderer.manager import RenderManager
 
-class Simulation(World):
+class Simulation:
     def __init__(self, width=1600, height=1200):
         # Initialize pygame
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Societal Simulation")
         
-        # Initialize the asset manager first
+        # Initialize components using composition
         self.asset_manager = AssetManager()
+        self.world = World(width, height)
+        self.render_manager = RenderManager(self.screen)
         
-        # Initialize World with screen dimensions
-        World.__init__(self, width, height)
+        # Connect components
+        self.world.world_screen = self.screen
+        self.world.asset_manager = self.asset_manager
         
-        # Pass screen to world
-        self.world_screen = self.screen
-        
-        # Set up systems after the screen is ready
-        self.setup_systems()
+        # Set up systems
+        self.world.setup_systems()
         
         # Add spatial debug system
-        self.spatial_debug = SpatialDebugSystem(self.ecs, self.screen)
-        self.ecs.add_system(self.spatial_debug)
+        self.spatial_debug = SpatialDebugSystem(self.world.ecs, self.screen)
+        self.world.ecs.add_system(self.spatial_debug)
         
         self.clock = pygame.time.Clock()
         self.running = False
-        self.setup_world()
+        
+        # Initialize the world
+        self.world.setup_world()
         
     def run(self):
         self.running = True
@@ -46,7 +48,7 @@ class Simulation(World):
                     self.spatial_debug.enabled = not self.spatial_debug.enabled
             
             # Update world (includes rendering via ECS systems)
-            self.update_world()
+            self.world.update_world()
 
             # Flip display
             pygame.display.flip()

@@ -1,8 +1,8 @@
 # Genesis is used to handle the genetic and evolutionary aspects of the simulation
 
 from typing import Dict, List, Any, Type
-from .ecs.entities import Entity
-from .ecs.components import Component
+from .entities import Entity
+from .components import Component
 
 class ECS:
     """Container for all entities and components"""

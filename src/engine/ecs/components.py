@@ -19,10 +19,11 @@ class RenderComponent(Component):
 @dataclass
 class AnimationComponent(Component):
     """Component for entity animations"""
-    animation: Any
-    position: Tuple[int, int]
+    animation: Any  # The animation asset
+    position: Tuple[int, int] = (0, 0)
     active: bool = True
-
+    frame_duration: float = 0.1  # Default 10 FPS
+    
 @dataclass
 class TransformComponent(Component):
     """Component for position, rotation, scale"""

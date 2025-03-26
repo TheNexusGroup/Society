@@ -1,10 +1,13 @@
-from ..population.types import Agent, WorkPlace, Food
-from .ecs_core import ECS
+from .entity.types import Agent, WorkPlace, Food
+from .ecs.core import ECS
 from .ecs.components import RenderComponent, AnimationComponent, TransformComponent, BehaviorComponent, TagComponent
 from .ecs.system import RenderSystem, AnimationSystem, MovementSystem, BehaviorSystem
 from .spatial_system.grid import SpatialGrid
 from .spatial_system.system import SpatialSystem
 from .constants import EntityType
+from .entity.pool import EntityPool
+from .entity.factory import EntityFactory
+import random
 
 class World:
     def __init__(self, width, height):
@@ -23,6 +26,16 @@ class World:
         # Initialize spatial grid
         self.spatial_grid = SpatialGrid(width, height)
         
+        # Initialize entity pools
+        self.entity_pools = {
+            Agent: EntityPool(Agent),
+            Food: EntityPool(Food),
+            WorkPlace: EntityPool(WorkPlace)
+        }
+        
+        # Initialize entity factory
+        self.entity_factory = None  # Will be set after asset_manager is available
+        
     def setup_systems(self):
         # Add systems to the ECS world
         self.ecs.add_system(RenderSystem(self.ecs, self.world_screen))
@@ -33,6 +46,14 @@ class World:
         # Add spatial system
         self.spatial_system = SpatialSystem(self.ecs, self.spatial_grid)
         self.ecs.add_system(self.spatial_system)
+        
+        # Initialize entity factory now that we have asset_manager
+        self.entity_factory = EntityFactory(
+            self.asset_manager,
+            self.ecs,
+            self.spatial_grid,
+            self.entity_pools
+        )
 
     def setup_world(self):
         # Setup ECS systems first
@@ -45,15 +66,31 @@ class World:
 
     def create_population(self):
         for i in range(self.population_size):
-            self.add_entity(Agent(i, self.world_screen))
+            agent = self.entity_factory.create_entity(
+                EntityType.PERSON_MALE if i % 2 == 0 else EntityType.PERSON_FEMALE, 
+                (random.randint(0, self.width), random.randint(0, self.height)),
+                self.world_screen,
+                id=i
+            )
+            self.entities.append(agent)
 
     def create_food(self):
         for i in range(self.food_count):
-            self.add_entity(Food(self.world_screen))
+            food = self.entity_factory.create_entity(
+                EntityType.FOOD,
+                (random.randint(0, self.width), random.randint(0, self.height)),
+                self.world_screen
+            )
+            self.entities.append(food)
 
     def create_work(self):
         for i in range(self.work_count):
-            self.add_entity(WorkPlace(self.world_screen))
+            workplace = self.entity_factory.create_entity(
+                EntityType.WORK,
+                (random.randint(0, self.width), random.randint(0, self.height)),
+                self.world_screen
+            )
+            self.entities.append(workplace)
         
     def add_entity(self, entity):
         self.entities.append(entity)
@@ -138,11 +175,16 @@ class World:
         if entity in self.entities:
             self.entities.remove(entity)
             
-            # Find and remove the ECS entity
-            for entity_id, component in self.ecs.get_components_by_type("render").items():
-                if component.asset in entity.assets.values():
-                    self.ecs.delete_entity(entity_id)
-                    break
+            # Remove from spatial grid
+            self.spatial_grid.remove(entity.ecs_id)
+            
+            # Remove from ECS
+            self.ecs.delete_entity(entity.ecs_id)
+            
+            # Return to pool
+            entity_type = type(entity)
+            if entity_type in self.entity_pools:
+                self.entity_pools[entity_type].release(entity)
 
     def update_world(self):
         # Update the ECS world instead of individual entities

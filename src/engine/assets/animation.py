@@ -9,6 +9,7 @@ class Animation:
         self.rect = self.images[0].get_rect()
         self.image_paths = image_paths  # Store the paths for scaling
         self.dirty = True  # Mark as needing redraw when frame changes
+        self.from_spritesheet = len(image_paths) == 1 if image_paths else False
         
     def set_position(self, x, y):
         old_pos = (self.rect.x, self.rect.y)
@@ -35,5 +36,12 @@ class Animation:
         self.dirty = False  # Reset dirty flag after rendering
         
     def get_current_image(self):
+        """Get the current frame image"""
         return self.images[self.current_frame]
+    
+    def reset(self):
+        """Reset animation to first frame"""
+        self.current_frame = 0
+        self.frame_counter = 0
+        self.dirty = True
         

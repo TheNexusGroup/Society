@@ -3,7 +3,7 @@ import pygame
 from typing import Dict, List, Optional, Union, Tuple
 from .animation import Animation
 from .asset import Asset
-from .constants import EntityType, asset_map, additional_assets
+from ..constants import EntityType, asset_map, additional_assets
 
 class AssetManager:
     """Centralized asset management system to load, cache and manage game assets"""
@@ -56,24 +56,42 @@ class AssetManager:
         """Scale an image and return the result"""
         return pygame.transform.scale(image, (width, height))
         
-    def load_spritesheet(self, path: str, sprite_width: int, sprite_height: int, rows: int, cols: int) -> List[pygame.Surface]:
+    def load_spritesheet(self, path: str, sprite_width: int, sprite_height: int, 
+                        rows: int, cols: int) -> List[pygame.Surface]:
         """Load a spritesheet and split it into individual sprites"""
-        spritesheet = self.get_image(path)
-        sprites = []
+        key = f"spritesheet_{path}_{sprite_width}_{sprite_height}_{rows}_{cols}"
         
-        for row in range(rows):
-            for col in range(cols):
-                rect = pygame.Rect(
-                    col * sprite_width, 
-                    row * sprite_height, 
-                    sprite_width, 
-                    sprite_height
-                )
-                sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
-                sprite.blit(spritesheet, (0, 0), rect)
-                sprites.append(sprite)
-                
-        return sprites
+        if key not in self.animations:
+            spritesheet = self.get_image(path)
+            sprites = []
+            
+            for row in range(rows):
+                for col in range(cols):
+                    rect = pygame.Rect(
+                        col * sprite_width, 
+                        row * sprite_height, 
+                        sprite_width, 
+                        sprite_height
+                    )
+                    sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
+                    sprite.blit(spritesheet, (0, 0), rect)
+                    sprites.append(sprite)
+            
+            # Cache the animation with a meaningful key
+            self.animations[key] = Animation(sprites, 10, image_paths=[path])
+            
+        return self.animations[key]
+    
+    def get_animation_from_spritesheet(self, path: str, sprite_width: int, sprite_height: int,
+                                     rows: int, cols: int, frame_delay: int = 10) -> Animation:
+        """Get an animation from a spritesheet with caching"""
+        key = f"sprite_anim_{path}_{sprite_width}_{sprite_height}_{rows}_{cols}_{frame_delay}"
+        
+        if key not in self.animations:
+            anim = self.load_spritesheet(path, sprite_width, sprite_height, rows, cols)
+            self.animations[key] = Animation(anim.images, frame_delay, image_paths=[path])
+            
+        return self.animations[key]
     
     def get_scaled_asset(self, path: str, width: int, height: int) -> Asset:
         """Get scaled asset directly"""

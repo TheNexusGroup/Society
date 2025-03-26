@@ -3,12 +3,11 @@
 from enum import Enum
 from dataclasses import dataclass
 from typing import Tuple, Dict, Any, Optional
-import os
 import pygame
-from .asset import Asset
-from .animation import Animation
-from .assetmanager import AssetManager
-from .constants import EntityType, asset_map, additional_assets
+from ..assets.asset import Asset
+from ..assets.animation import Animation
+from ..assets.manager import AssetManager
+from ..constants import EntityType, asset_map, additional_assets
 
 
 class Entity:
