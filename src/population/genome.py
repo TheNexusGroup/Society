@@ -1,0 +1,1 @@
+# Genome is used to represent the genetic information of an agent and it's evolution

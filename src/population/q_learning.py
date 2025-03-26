@@ -1,0 +1,1 @@
+# Q learning is used to handle the reinforcement learning aspect of the simulation
