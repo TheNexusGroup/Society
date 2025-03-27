@@ -4,9 +4,12 @@ from .ecs.components import RenderComponent, AnimationComponent, TransformCompon
 from .ecs.system import RenderSystem, AnimationSystem, MovementSystem, BehaviorSystem
 from .spatial_system.grid import SpatialGrid
 from .spatial_system.system import SpatialSystem
-from .constants import EntityType
+from ..constants import EntityType
 from .entity.pool import EntityPool
 from .entity.factory import EntityFactory
+from src.population.society import Society
+from src.population.reproduction import ReproductionSystem
+from ..agent.navigation import NavigationSystem
 import random
 
 class World:
@@ -36,12 +39,22 @@ class World:
         # Initialize entity factory
         self.entity_factory = None  # Will be set after asset_manager is available
         
+        # Initialize society
+        self.society = Society(self)
+        
+        # Initialize reproduction system
+        self.reproduction_system = ReproductionSystem(self)
+        
     def setup_systems(self):
         # Add systems to the ECS world
         self.ecs.add_system(RenderSystem(self.ecs, self.world_screen))
         self.ecs.add_system(AnimationSystem(self.ecs))
         self.ecs.add_system(MovementSystem(self.ecs))
-        self.ecs.add_system(BehaviorSystem(self.ecs))
+        self.ecs.add_system(BehaviorSystem(self))
+        
+        # Add navigation system
+        self.navigation_system = NavigationSystem(self)
+        self.ecs.add_system(self.navigation_system)
         
         # Add spatial system
         self.spatial_system = SpatialSystem(self.ecs, self.spatial_grid)
@@ -63,6 +76,9 @@ class World:
         self.create_population()
         self.create_food()
         self.create_work()
+        
+        # Initialize society with the population
+        self.society.population = self.population
 
     def create_population(self):
         for i in range(self.population_size):
@@ -73,6 +89,7 @@ class World:
                 id=i
             )
             self.entities.append(agent)
+            self.population.append(agent)
 
     def create_food(self):
         for i in range(self.food_count):
@@ -189,3 +206,10 @@ class World:
     def update_world(self):
         # Update the ECS world instead of individual entities
         self.ecs.update(1.0)  # Using 1.0 as a fixed delta time
+
+    def get_entity_by_id(self, entity_id):
+        """Find an entity by its ECS ID"""
+        for entity in self.entities:
+            if hasattr(entity, 'ecs_id') and entity.ecs_id == entity_id:
+                return entity
+        return None

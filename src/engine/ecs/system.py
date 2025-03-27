@@ -3,6 +3,7 @@ import math
 import pygame
 from typing import List, Tuple, Dict, Any
 from ..renderer.manager import RenderManager
+from src.agent.behaviour import BehaviorSystem as AgentBehaviours
 
 class System:
     """Base class for all systems"""
@@ -95,99 +96,6 @@ class MovementSystem(System):
             if render:
                 render.position = transform.position
 
-class BehaviorSystem(System):
-    """System for handling entity behaviors and AI"""
-    
-    def update(self, dt):
-        # Process all entities with behavior components
-        for entity_id, behavior in self.world.get_components_by_type("behavior").items():
-            # Get transform component
-            transform = self.world.get_component(entity_id, "transform")
-            if not transform:
-                continue
-                
-            # Get tag component to identify entity type
-            tag = self.world.get_component(entity_id, "tag")
-            if not tag:
-                continue
-                
-            # Handle different entity types
-            if tag.tag == "agent":
-                self.update_agent(entity_id, behavior, transform, dt)
-                
-    def update_agent(self, entity_id, behavior, transform, dt):
-        """Handle agent-specific behavior"""
-        x, y = transform.position
-        
-        # Update behavior based on state and properties
-        state = behavior.state
-        properties = behavior.properties
-        
-        # Example: If hungry, look for food
-        if state == "idle" and properties.get("hunger", 0) > 60:
-            # Find nearby food using spatial system
-            spatial = self.world.get_system("spatial")
-            food_entities = spatial.find_by_tag(
-                transform.position, 
-                300,  # Search radius
-                "tag", 
-                "food"
-            )
-            
-            if food_entities:
-                # Target the closest food
-                food_id = food_entities[0]
-                food_transform = self.world.get_component(food_id, "transform")
-                
-                if food_transform:
-                    # Set target and change state
-                    behavior.target = food_id
-                    behavior.state = "seeking_food"
-                    behavior.target_action = "eat"  # Set the RL action
-                    
-                    # Calculate direction to food
-                    fx, fy = food_transform.position
-                    dx, dy = fx - x, fy - y
-                    distance = max(1, math.sqrt(dx*dx + dy*dy))
-                    
-                    # Normalize and set velocity
-                    transform.velocity = (dx/distance * 50, dy/distance * 50)
-        
-        # Example: If seeking food, move toward it
-        elif state == "seeking_food":
-            target_id = behavior.target
-            if target_id is not None:
-                target_transform = self.world.get_component(target_id, "transform")
-                
-                if target_transform:
-                    # Calculate direction to target
-                    tx, ty = target_transform.position
-                    dx, dy = tx - x, ty - y
-                    distance = math.sqrt(dx*dx + dy*dy)
-                    
-                    if distance < 10:  # Close enough to eat
-                        # Eat the food
-                        properties["hunger"] = max(0, properties["hunger"] - 30)
-                        behavior.state = "idle"
-                        behavior.target = None
-                        behavior.target_action = None
-                        transform.velocity = (0, 0)
-                        
-                        # Get the entity from the world to actually remove it
-                        for entity in self.world.entities:
-                            if hasattr(entity, 'ecs_id') and entity.ecs_id == target_id:
-                                self.world.remove_entity(entity)
-                                break
-                    else:
-                        # Keep moving toward food
-                        transform.velocity = (dx/distance * 50, dy/distance * 50)
-                else:
-                    # Target no longer exists
-                    behavior.state = "idle"
-                    behavior.target = None
-                    behavior.target_action = None
-                    transform.velocity = (0, 0)
-
 class SpatialDebugSystem(System):
     """System for visualizing spatial partitioning grid for debugging"""
     
@@ -202,3 +110,25 @@ class SpatialDebugSystem(System):
             "work": (100, 100, 255)      # Blue for workplaces
         }
         self.enabled = False
+
+class BehaviorSystem(System):
+    """System for handling agent behaviors within ECS"""
+    
+    def __init__(self, world):
+        super().__init__(world)
+        # Use the existing behavior system from agent module for logic
+        self.agent_behavior = AgentBehaviours(world)
+    
+    def update(self, dt):
+        """Process behavior components"""
+        # Get all entities with behavior components
+        behavior_components = self.world.ecs.get_components_by_type("behavior")
+        
+        # Create a list of entity IDs to prevent dictionary changed size during iteration errors
+        entity_ids = list(behavior_components.keys())
+        
+        for entity_id in entity_ids:
+            # Check if entity still exists (may have been removed during iteration)
+            if entity_id in behavior_components:
+                # Use the agent behavior system to update this entity
+                self.agent_behavior.update(entity_id)

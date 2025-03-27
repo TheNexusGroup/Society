@@ -91,3 +91,30 @@ Genome:
 - Generational improvements
 - Economic distribution
 - Social network analysis
+
+
+## TODO:
+ - Add a health/energy/hunger/money/mood BAR/GRAPH/CHART/etc.
+ - Add a UI for simulation stats
+ - Add a logging system for ongoing statistics, which can later be used for graphing results
+ - 
+
+## Agentic Growth System Design and File Hierarchy
+src/
+|-- engine/            # (existing) Core simulation engine
+|-- population/        # Population management systems
+|   |-- genome.py      # Genome definition and genetic operations
+|   |-- q_learning.py  # Q-learning implementation 
+|   |-- society.py     # Society management and agent interactions
+|   |-- evolution.py   # Genetic algorithm, selection, and epochs
+|   |-- reproduction.py# Mating mechanics and offspring creation
+|   |-- metrics.py     # Tracking population metrics
+|-- agent/             # Extended agent implementation
+|   |-- behavior.py    # Complex behaviors beyond basic actions
+|   |-- navigation.py  # Movement and spatial exploration
+|   |-- memory.py      # Experience memory for learning
+|   |-- network.py     # Neural network implementation (optional)
+|-- logging/           # (existing) Logging and metrics
+|-- ui/                # Visualization and UI components
+    |-- charts.py      # Statistical visualization
+    |-- info_panel.py  # Agent information display

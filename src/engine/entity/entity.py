@@ -7,8 +7,7 @@ import pygame
 from ..assets.asset import Asset
 from ..assets.animation import Animation
 from ..assets.manager import AssetManager
-from ..constants import EntityType, asset_map, additional_assets
-
+from src.constants import EntityType, asset_map, additional_assets
 
 class Entity:
     position: Tuple[int, int]
@@ -16,21 +15,26 @@ class Entity:
     entity_type: EntityType
     assets: Dict[str, Asset]
     screen: pygame.Surface
-    asset_path: str
+    default_asset: str
     additional_assets: Dict[str, Dict[str, Any]]
     asset_manager: AssetManager
     ecs_id: Optional[int] = None  # Store the ECS entity ID
+    current_state: Optional[str] = None
 
     def __init__(self, entity_type: EntityType, position: Tuple[int, int]):
         self.entity_type = entity_type
         self.position = position
-        self.asset_path = asset_map[self.entity_type]
+        self.default_asset = asset_map[self.entity_type].get("path")
+        self.stateful_assets = [k for k, v in asset_map[self.entity_type].items() if k in ["eat", "mate", "work", "rest", "dead"]]
         self.additional_assets = additional_assets.get(self.entity_type, {})
         self.assets = {}
         self.asset_manager = AssetManager()
         
-        self.load_asset(self.entity_type.value, self.asset_path)
-        
+        self.load_asset(asset_map[self.entity_type].get("name"), self.default_asset)
+
+        for key in self.stateful_assets:
+            self.load_asset(key, asset_map[self.entity_type][key])
+
         if self.additional_assets:
             self.load_animation(
                 self.additional_assets["name"],
@@ -41,6 +45,7 @@ class Entity:
         self.scale_asset(self.entity_type.value, self.size[0], self.size[1])
         
     def load_asset(self, name, image_path):
+        print(f"Loading asset: {name} from {image_path}")
         self.assets[name] = self.asset_manager.get_asset(image_path)
         return self.assets[name]
         
@@ -96,6 +101,29 @@ class Entity:
 
     def update(self):
         pass  # ECS handles updates now
+
+    def update_asset_based_on_state(self, state=None):
+        """Update the entity's appearance based on its current state"""
+        if not hasattr(self, 'entity_type') or self.entity_type not in asset_map:
+            return
+        
+        # Get asset configurations for this entity type
+        asset_config = asset_map[self.entity_type]
+        
+        # Default to main asset
+        asset_name = asset_config["name"]
+        
+        # If we're an Agent with a current state/action
+        if hasattr(self, 'is_alive') and not self.is_alive:
+            # Dead state takes precedence
+            if "dead" in self.assets:
+                asset_name = "dead"
+        elif state and state in self.assets:
+            # Use the asset for this state if available
+            asset_name = state
+        
+        # Update current state
+        self.current_state = asset_name
 
 class EntityFactory:
     @staticmethod

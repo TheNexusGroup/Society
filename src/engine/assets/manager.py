@@ -3,7 +3,7 @@ import pygame
 from typing import Dict, List, Optional, Union, Tuple
 from .animation import Animation
 from .asset import Asset
-from ..constants import EntityType, asset_map, additional_assets
+from src.constants import EntityType, asset_map, additional_assets
 
 class AssetManager:
     """Centralized asset management system to load, cache and manage game assets"""
