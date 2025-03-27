@@ -94,13 +94,13 @@ Genome:
 
 
 ## TODO:
- - Add a health/energy/hunger/money/mood BAR/GRAPH/CHART/etc.
- - Add a UI for simulation stats
- - Add a logging system for ongoing statistics, which can later be used for graphing results
- - Clear old assets on each epoch
- - Change animations based on behaviors
- - Have agents 'go to work' at the work place with animation of 'working'
- - Add 'mating' animation when 2 agents are mating
+ - [ ] Add a health/energy/hunger/money/mood BAR/GRAPH/CHART/etc.
+ - [ ] Add a UI for simulation stats
+ - [ ] Add a logging system for ongoing statistics, which can later be used for graphing results
+ - [X] Clear old assets on each epoch
+ - [ ] Change animations based on behaviors
+ - [ ] Have agents 'go to work' at the work place with animation of 'working'
+ - [ ] Add 'mating' animation when 2 agents are mating
 
 ## Agentic Growth System Design and File Hierarchy
 src/
