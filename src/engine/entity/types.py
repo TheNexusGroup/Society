@@ -15,7 +15,6 @@ class Agent(Entity):
     genome: Genome
     age: int
     energy: float
-    hunger: float
     money: float
     mood: float
     generation: int
@@ -38,15 +37,14 @@ class Agent(Entity):
         self.screen = screen
         self.age = 0
         self.energy = 100.0
-        self.hunger = 0.0
         self.money = 50.0
         self.mood = 0.0
-        self.generation = 0
+        self.generation = 0 # Related to Offspring/Birth
         self.offspring_generations = 0
         self.offspring_count = 0
         self.current_action = None
         self.mate_target = None
-        self.size = (32, 32)
+        self.size = (64, 64)
         
         # Flag to control whether this agent uses neural network or Q-table
         self.genome.use_neural_network = random.random() < 0.5  # 50% chance initially
@@ -77,12 +75,11 @@ class Agent(Entity):
 
     def get_state_representation(self) -> str:
         """Returns a string representation of the agent's current state for Q-learning"""
-        hunger_level = "high" if self.hunger > 70 else "medium" if self.hunger > 30 else "low"
         energy_level = "high" if self.energy > 70 else "medium" if self.energy > 30 else "low"
         money_level = "high" if self.money > 70 else "medium" if self.money > 30 else "low"
         mood_level = "positive" if self.mood > 0.3 else "negative" if self.mood < -0.3 else "neutral"
         
-        return f"{hunger_level}_{energy_level}_{money_level}_{mood_level}"
+        return f"{energy_level}_{money_level}_{mood_level}"
 
     def update(self):
         self.render_all()
@@ -127,7 +124,7 @@ class WorkPlace(Entity):
         capacity = random.randint(1, 5)
         self.capacity = capacity
         self.current_workers = []
-        self.size = (32, 32)
+        self.size = (64, 64)
         
     def reset(self, screen: pygame.Surface):
         self.position = (random.randint(0, screen.get_width()), random.randint(0, screen.get_height()))
@@ -168,7 +165,7 @@ class Food(Entity):
         self.screen = screen
         super().__init__(entity_type=self.entity_type, position=self.position)
         self.nutrition_value = random.uniform(10, 50)
-        self.size = (32, 32)
+        self.size = (64, 64)
     
     def reset(self, screen: pygame.Surface):
         self.position = (random.randint(0, screen.get_width()), random.randint(0, screen.get_height()))

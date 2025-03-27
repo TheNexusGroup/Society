@@ -12,13 +12,12 @@ Genome:
   - Gender: Male/Female
   - Age - Determines lifetime
   - Energy - Determines the ability to do actions or die
-  - Hunger - Determines the ability to eat or die
   - Money - Determines the ability to buy food, and affects mating (or potentially requires working for it) - can be potentially inherited at a cost
   - Mood: Happiness (1) to Stress (-1)
 
 - **Derived Inherited Attributes**:
   - Metabolic rate - Determines the rate at which energy is consumed (factor of mating, higher metabolic means more food is required, but work is more effective)
-  - Stamina - Determines the ability to do actions or die (factor of mating, higher stamina means hunger is less of a factor, but can work longer)
+  - Stamina - Determines the ability to do actions or die (factor of mating, higher stamina means energy consumption is less of a factor, but can work longer)
   - Learning capacity - Determines Learning Rate in Q-learning (factor of mating)
   - Attraction profile - Determines the threshold for seeking a similar mate or higher trait mate (-1 - 1 : -1 = lower threshold, 1 = higher threshold)
 
@@ -28,7 +27,7 @@ Genome:
   - Offspring_Count - Determines the number of offspring the agent has had
 
 ## Actions
-- Eat (consumes food, reduces hunger and generates energy)
+- Eat (consumes food, and generates energy)
 - Work (generates money, consumes energy)
 - Rest (regenerates a small amount of energy, consumes time)
 - Mate (affects mood, requires partner, energy and attraction profile)
@@ -42,7 +41,7 @@ Genome:
 
 ## Learning Mechanism
 - Q-learning table encoded in agent's genome
-- States: combinations of hunger/energy/money/mood levels and food/work/mate/rest/empty availability
+- States: combinations of energy/money/mood levels and food/work/mate/rest/empty availability
 - Actions: eat/work/rest/mate/search
 - Rewards: survival, reproduction success, generational growth
 
@@ -94,7 +93,7 @@ Genome:
 
 
 ## TODO:
- - [ ] Add a health/energy/hunger/money/mood BAR/GRAPH/CHART/etc.
+ - [ ] Add a health/energy/money/mood BAR/GRAPH/CHART/etc.
  - [ ] Add a UI for simulation stats
  - [ ] Add a logging system for ongoing statistics, which can later be used for graphing results
  - [X] Clear old assets on each epoch
@@ -128,7 +127,7 @@ src/
 |       |-- system.py        # Spatial query system (nearest entities, etc.)
 |-- population/              # Population management systems
 |   |-- genome.py            # Genetic representation and operations
-|   |-- q_learning.py        # Q-learning implementation for agent decision-making
+|   |-- q_learning.py        # Q-learning implementation for agent decision-making # These Q-Tables should be unique for each agent
 |   |-- society.py           # Society management and inter-agent interactions
 |   |-- evolution.py         # Genetic algorithm implementation for selection/evolution
 |   |-- reproduction.py      # Mating mechanics and offspring creation
@@ -136,8 +135,8 @@ src/
 |-- agent/                   # Agent implementation
 |   |-- behavior.py          # Agent behavior system and action execution
 |   |-- navigation.py        # Movement and spatial exploration
-|   |-- memory.py            # Experience memory for learning (Replay buffers)
-|   |-- network.py           # Neural network implementation for deep learning
+|   |-- memory.py            # Experience memory for learning (Replay buffers)  - # These should NOT be passed down to offspring
+|   |-- network.py           # Neural network implementation for deep learning  - # These should be passed down to offspring
 |   |-- brain.py             # Decision-making system combining Q-learning and neural nets
 |-- logging/                 # Logging and metrics collection
 |   |-- metrics.py           # Statistical data collection and analysis
@@ -147,3 +146,74 @@ src/
 |-- constants.py             # Global constants, enums, and configuration
 |
 |-- main.py                  # Application entry point
+
+
+New System Design
+src/
+|-- core/                               # Core framework components
+|   |-- ecs/                            # Entity Component System
+|   |   |-- entity_manager.py           # Entity creation and management
+|   |   |-- component_manager.py        # Component registration and storage
+|   |   |-- system_manager.py           # System registration and execution
+|   |   |-- components/                 # Component definitions
+|   |   |   |-- base.py                 # Base component class
+|   |   |   |-- transform.py            # Position, rotation, scale
+|   |   |   |-- renderable.py           # Visual representation components
+|   |   |   |-- behavior.py             # Agent behavior components
+|   |   |   |-- physics.py              # Movement and collision components
+|   |   |-- systems/                    # System implementations
+|   |       |-- render_system.py        # Handles rendering entities
+|   |       |-- physics_system.py       # Movement and collision detection
+|   |       |-- behavior_system.py      # Agent decision processing
+|   |       |-- debug_system.py         # Debugging visualizations
+|   |-- event/                          # Event system for decoupled communication
+|   |   |-- event_manager.py            # Event dispatching and subscription
+|   |   |-- event_types.py              # Event type definitions
+|   |-- assets/                         # Asset management
+|   |   |-- asset_manager.py            # Central asset loading and caching
+|   |   |-- animation.py                # Animation handling
+|   |-- spatial/                        # Spatial partitioning
+|       |-- grid.py                     # Grid-based spatial queries
+|-- simulation/                         # Simulation-specific logic
+|   |-- entities/                       # Entity factory and definitions
+|   |   |-- entity_factory.py           # Creates entities with components
+|   |   |-- entity_types.py             # Entity type definitions
+|   |-- world/                          # World management
+|   |   |-- world.py                    # Main world container and manager
+|   |   |-- resource_manager.py         # Food, work, and resource spawning
+|   |-- agent/                          # Agent logic and AI
+|   |   |-- decision/                   # Decision making systems
+|   |   |   |-- q_learning.py           # Q-learning implementation
+|   |   |   |-- neural_network.py       # Neural network implementation
+|   |   |   |-- brain.py                # Combined decision system
+|   |   |-- navigation.py               # Agent movement logic
+|   |   |-- memory.py                   # Agent memory systems
+|   |   |-- social.py                   # Social interactions between agents
+|   |-- genetics/                       # Genetic systems
+|   |   |-- genome.py                   # Genetic representation
+|   |   |-- evolution.py                # Selection and evolution algorithms
+|   |   |-- reproduction.py             # Mating mechanics
+|   |-- society/                        # Society-level systems
+|       |-- population.py               # Population management
+|       |-- economy.py                  # Economic systems
+|-- ui/                                 # User interface
+|   |-- render/                         # Rendering systems
+|   |   |-- renderer.py                 # Main rendering manager
+|   |   |-- camera.py                   # Camera and viewport management
+|   |-- hud/                            # Heads-up display elements
+|   |   |-- entity_info.py              # Entity information display
+|   |   |-- stats_panel.py              # Simulation statistics
+|   |-- visualization/                  # Data visualization
+|       |-- charts.py                   # Statistical charting
+|       |-- graph.py                    # Network/relationship graphs
+|-- utils/                              # Utility functions and tools
+|   |-- config.py                       # Configuration management
+|   |-- profiler.py                     # Performance profiling
+|   |-- logger.py                       # Logging system
+|   |-- object_pool.py                  # Memory management with object pooling
+|   |-- math_utils.py                   # Math utility functions
+|-- data/                               # Data management
+|   |-- metrics.py                      # Statistical data collection
+|   |-- serialization.py                # Save/load functionality
+|-- constants.py                        # Global constants and enums
+|-- main.py                             # Application entry point

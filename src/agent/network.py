@@ -127,14 +127,6 @@ class DQNetwork:
         # Example encoding:
         encoded = []
         
-        # Encode hunger level
-        if state_dict.get('hunger') == 'low':
-            encoded.extend([1.0, 0.0, 0.0])
-        elif state_dict.get('hunger') == 'medium':
-            encoded.extend([0.0, 1.0, 0.0])
-        else:  # high
-            encoded.extend([0.0, 0.0, 1.0])
-            
         # Encode energy level
         if state_dict.get('energy') == 'low':
             encoded.extend([1.0, 0.0, 0.0])

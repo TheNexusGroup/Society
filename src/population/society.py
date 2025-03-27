@@ -2,6 +2,7 @@ from .genome import Genome
 from .q_learning import QLearningSystem
 from ..engine.entity.types import Agent
 from ..agent.brain import AgentBrain
+from .evolution import Evolution
 
 # Society is a collection of agents that interact with the world and other agents
 
@@ -9,7 +10,7 @@ class Society:
     def __init__(self, world):
         self.world = world
         self.population = []
-        self.generation = 0
+        self.epoch = 0
         self.metrics = {
             'population_size': [],
             'average_lifespan': [],
@@ -17,6 +18,7 @@ class Society:
             'genetic_diversity': []
         }
         self.q_learning_system = QLearningSystem()
+        self.evolution = Evolution(mutation_rate=0.1, elite_percentage=0.5)
     
     def initialize_population(self, size):
         """Initialize starting population with random agents"""
@@ -88,11 +90,10 @@ class Society:
             
             # Age agent and update metrics
             agent.age += 1
-            agent.energy -= 1.0 * agent.genome.metabolism  # Base energy consumption
-            agent.hunger += 1.0 * agent.genome.metabolism  # Get hungrier over time
-            
+            agent.energy -= 1.0 * agent.genome.metabolism / agent.genome.stamina  # Base energy consumption
+
             # Check for death conditions
-            if agent.energy <= 0 or agent.hunger >= 100 or agent.age > 100:
+            if agent.energy <= 0 or agent.age > 100:
                 self.population.remove(agent)
                 self.world.remove_entity(agent)
     
@@ -165,28 +166,38 @@ class Society:
         # Update metrics
         self.record_metrics()
         
-        # Start new generation if needed
+        # Start new epoch if needed
         if not self.population:
-            self.start_new_generation()
+            self.start_new_epoch()
     
     def record_metrics(self):
         """Record current population metrics"""
         # Implementation depends on how you want to track metrics
         pass
     
-    def start_new_generation(self):
-        """Initialize a new generation based on previous generation performance"""
-        # Increment generation counter
-        self.generation += 1 # TODO: Change this to Epoch as a generation is part of a single epoch
+    def start_new_epoch(self):
+        """Initialize a new epoch based on previous epoch performance"""
+        # Store previous population before clearing world
+        previous_population = self.population.copy() if self.population else []
         
-        # Record metrics for previous generation
-        self.metrics['population_size'].append(0)  # Final size was 0
+        # Increment epoch counter
+        self.epoch += 1
+        
+        # Record metrics for previous epoch
+        self.metrics['population_size'].append(len(previous_population))
         
         # Reset the world state
         self.world.reset_world()
         
-        # TODO: Implement Genetic Algorithm
-
+        # Create new population using genetic algorithm
+        new_population = self.evolution.evolve_population(previous_population, self.world)
+        
+        # Add new population to world
+        for agent in new_population:
+            self.world.add_entity(agent)
+            # Initialize agent brain
+            agent.brain = AgentBrain(agent.id, agent.genome)
+        
         # Create new resources
         for _ in range(self.world.food_count):
             self.world.create_food()
@@ -194,11 +205,8 @@ class Society:
         for _ in range(self.world.work_count):
             self.world.create_work()
         
-        # Create new initial population
-        initial_size = max(self.world.population_size, 10)  # Ensure minimum viable population
-        self.initialize_population(initial_size)
-        
         # Update society's population reference
-        self.population = self.world.population
+        self.population = new_population
+        self.world.population = new_population
         
-        print(f"Generation {self.generation} started with {len(self.population)} agents")
+        print(f"Epoch {self.epoch} started with {len(self.population)} agents")

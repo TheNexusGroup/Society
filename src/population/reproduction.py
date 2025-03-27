@@ -16,20 +16,16 @@ class ReproductionSystem:
         if agent1.energy < 40 or agent2.energy < 40:
             return None
             
-        if agent1.hunger > 60 or agent2.hunger > 60:
-            return None
-            
         # Calculate reproduction chance based on health factors
         # Better health = higher chance of successful reproduction
         base_chance = 0.3  # Base 30% chance
         
         # Health modifiers
         energy_factor = (agent1.energy + agent2.energy) / 200  # 0.0-1.0
-        hunger_factor = 1.0 - ((agent1.hunger + agent2.hunger) / 200)  # 0.0-1.0
         age_factor = 1.0 - (max(agent1.age, agent2.age) / 100)  # Age penalty
         
         # Calculate final reproduction chance
-        reproduction_chance = base_chance * energy_factor * hunger_factor * age_factor
+        reproduction_chance = base_chance * energy_factor * age_factor
         
         # Check if reproduction is successful
         if random.random() < reproduction_chance:

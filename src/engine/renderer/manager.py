@@ -5,7 +5,7 @@ from collections import defaultdict
 class RenderManager:
     """Manages optimized rendering with sprite batching and dirty rectangles"""
     
-    def __init__(self, screen, background_color=(50, 100, 50)):
+    def __init__(self, screen, background_color=(50, 100, 50), ui_rects=None):
         self.screen = screen
         self.background_color = background_color
         self.width = screen.get_width()
@@ -20,6 +20,9 @@ class RenderManager:
         
         # For viewport culling
         self.view_rect = pygame.Rect(0, 0, self.width, self.height)
+        
+        # UI rectangles to avoid overwriting
+        self.ui_rects = ui_rects or []
         
         # Create background surface once
         self.background = self.create_background()
@@ -39,17 +42,31 @@ class RenderManager:
             pygame.draw.line(bg, (25, 65, 155), (0, i), (self.width, i), 2)
             
         return bg
-        
+    
+    def add_ui_rect(self, rect):
+        """Add a UI rectangle to avoid drawing over"""
+        self.ui_rects.append(rect)
+    
+    def remove_ui_rect(self, rect):
+        """Remove a UI rectangle"""
+        if rect in self.ui_rects:
+            self.ui_rects.remove(rect)
+    
     def add_to_batch(self, texture_id, position, source_rect=None, dest_rect=None):
         """Add sprite to appropriate batch based on texture"""
         if dest_rect is None:
             dest_rect = pygame.Rect(position[0], position[1], 
-                                   source_rect.width if source_rect else 0, 
-                                   source_rect.height if source_rect else 0)
+                                  source_rect.width if source_rect else 0, 
+                                  source_rect.height if source_rect else 0)
         
         # Skip if completely outside viewport
         if not self.view_rect.colliderect(dest_rect):
             return
+        
+        # Skip if inside a UI rectangle
+        for ui_rect in self.ui_rects:
+            if ui_rect.colliderect(dest_rect):
+                return
             
         # Add to appropriate batch
         self.batches[texture_id].append((source_rect, dest_rect))

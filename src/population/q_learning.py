@@ -2,13 +2,6 @@
 from typing import Dict, List, Tuple, Optional
 import random
 
-
-# TODO: Determine Low/Medium/High Thresholds for each of the following:
-# - Hunger
-# - Energy
-# - Money
-# - Mood
-
 class QLearningSystem:
     def __init__(self, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.1):
         self.learning_rate = learning_rate
@@ -18,19 +11,18 @@ class QLearningSystem:
     def initialize_q_table(self):
         """Initialize an empty Q-table with default values"""
         q_table = {}
-        # States: hunger_energy_money_mood
-        for hunger in ['low', 'medium', 'high']:
-            for energy in ['low', 'medium', 'high']:
-                for money in ['low', 'medium', 'high']:
-                    for mood in ['negative', 'neutral', 'positive']:
-                        state = f"{hunger}_{energy}_{money}_{mood}"
-                        q_table[state] = {
-                            'eat': 0.0,
-                            'work': 0.0,
-                            'rest': 0.0,
-                            'mate': 0.0,
-                            'search': 0.0
-                        }
+        # States: energy_money_mood
+        for energy in ['low', 'medium', 'high']:
+            for money in ['low', 'medium', 'high']:
+                for mood in ['negative', 'neutral', 'positive']:
+                    state = f"{energy}_{money}_{mood}"
+                    q_table[state] = {
+                        'eat': 0.0,
+                        'work': 0.0,
+                        'rest': 0.0,
+                        'mate': 0.0,
+                        'search': 0.0
+                    }
         return q_table
     
     def select_action(self, q_table, state, exploration_rate=None):

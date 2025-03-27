@@ -10,20 +10,11 @@ class BehaviorSystem:
         self.q_learning = QLearningSystem()
         
     def get_state_representation(self, agent):
-        hunger_level = self._get_hunger_level(agent.hunger)
         energy_level = self._get_energy_level(agent.energy)
         money_level = self._get_money_level(agent.money)
         mood_level = self._get_mood_level(agent.mood)
         
-        return f"{hunger_level}_{energy_level}_{money_level}_{mood_level}"
-    
-    def _get_hunger_level(self, hunger):
-        if hunger < 30:
-            return "low"
-        elif hunger < 70:
-            return "medium"
-        else:
-            return "high"
+        return f"{energy_level}_{money_level}_{mood_level}"
             
     def _get_energy_level(self, energy):
         if energy < 30:
@@ -52,7 +43,6 @@ class BehaviorSystem:
     def select_action(self, agent):
         state = self.get_state_representation(agent)
         state_dict = {
-            'hunger': self._get_hunger_level(agent.hunger),
             'energy': self._get_energy_level(agent.energy),
             'money': self._get_money_level(agent.money),
             'mood': self._get_mood_level(agent.mood)
@@ -134,13 +124,13 @@ class BehaviorSystem:
                 dy = transform.position[1] - food_transform.position[1]
                 distance = (dx*dx + dy*dy) ** 0.5
                 
-                if distance < 20:  # Close enough to eat
+                if distance < 10:  # Close enough to eat
                     # Pay for food
                     agent.money -= food_cost
                     
-                    # Eat food and reduce hunger
+                    # Eat food and increase energy
                     nutrition = food_entity.nutrition_value
-                    agent.hunger = max(0, agent.hunger - nutrition)
+                    agent.energy = max(0, agent.energy + (nutrition * agent.genome.stamina))
                     
                     # Remove consumed food
                     self.world.remove_entity(food_entity)
@@ -149,9 +139,8 @@ class BehaviorSystem:
                     behavior = self.world.ecs.get_component(agent.ecs_id, "behavior")
                     if behavior:
                         behavior.state = "eating"
-                        behavior.properties["hunger"] = agent.hunger
+                        behavior.properties["energy"] = agent.energy
                         
-                    # Calculate reward based on hunger reduction
                     reward = nutrition / 10
                 else:
                     # Navigate toward food
@@ -242,8 +231,8 @@ class BehaviorSystem:
         energy_before = agent.energy
         
         # Calculate energy gain based on stamina
-        energy_gain = 10 * agent.genome.stamina
-        agent.energy = min(100, agent.energy + energy_gain)
+        energy_gain = agent.genome.stamina
+        agent.energy = min(1, agent.energy + energy_gain)
         
         # Calculate reward based on energy gained
         actual_gain = agent.energy - energy_before
@@ -354,9 +343,7 @@ class BehaviorSystem:
         # Check basic requirements for any mating
         if agent.energy < 30 or potential_mate.energy < 30:
             return False
-        
-        if agent.hunger > 70 or potential_mate.hunger > 70:
-            return False
+
         
         # Check sexual preference compatibility
         same_gender = agent.genome.gender == potential_mate.genome.gender
@@ -476,14 +463,12 @@ class BehaviorSystem:
     def update_q_table(self, agent, state, action, reward, new_state):
         # Convert states to dictionaries for the brain
         state_dict = {
-            'hunger': self._get_hunger_level(agent.hunger),
             'energy': self._get_energy_level(agent.energy),
             'money': self._get_money_level(agent.money),
             'mood': self._get_mood_level(agent.mood)
         }
         
         new_state_dict = {
-            'hunger': self._get_hunger_level(agent.hunger),
             'energy': self._get_energy_level(agent.energy),
             'money': self._get_money_level(agent.money),
             'mood': self._get_mood_level(agent.mood)
@@ -535,7 +520,6 @@ class BehaviorSystem:
         # Get current state
         current_state = self.get_state_representation(agent)
         current_state_dict = {
-            'hunger': self._get_hunger_level(agent.hunger),
             'energy': self._get_energy_level(agent.energy),
             'money': self._get_money_level(agent.money),
             'mood': self._get_mood_level(agent.mood)
@@ -550,7 +534,6 @@ class BehaviorSystem:
         # Get new state after action
         new_state = self.get_state_representation(agent)
         new_state_dict = {
-            'hunger': self._get_hunger_level(agent.hunger),
             'energy': self._get_energy_level(agent.energy),
             'money': self._get_money_level(agent.money),
             'mood': self._get_mood_level(agent.mood)
@@ -565,9 +548,8 @@ class BehaviorSystem:
                 importance = (reward + 5) / 10  # Scale reward to 0-1 range for importance
                 agent.brain.store_social_memory(behavior.target, "mate", reward > 0, importance)
         
-        # Update agent vitals
-        agent.energy -= 1.0 * agent.genome.metabolism / agent.genome.stamina
-        agent.hunger += 1.0 * agent.genome.metabolism
+        # Update agent vitals - reduce metabolism effects
+        agent.energy -= 0.3 * agent.genome.metabolism / agent.genome.stamina
         
         # Update mood based on action results
         self._update_mood(agent, reward)
@@ -575,8 +557,8 @@ class BehaviorSystem:
         # Sync agent properties with behavior component
         self.sync_agent_with_component(agent, behavior)
         
-        # Check for death conditions
-        if agent.energy <= 0 or agent.hunger >= 100 or agent.age > 100:
+        # Check for death conditions - make more forgiving
+        if agent.energy <= 0 or agent.age > 200:
             agent.is_alive = False
             
             # Update to show dead appearance
@@ -589,7 +571,7 @@ class BehaviorSystem:
             
             # Check if population is extinct
             if not self.world.society.population:
-                self.world.society.start_new_generation()
+                self.world.society.start_new_epoch()
         
         return action, reward
     
@@ -624,7 +606,6 @@ class BehaviorSystem:
         # Update behavior component properties with latest agent values
         behavior_component.properties.update({
             "energy": agent.energy,
-            "hunger": agent.hunger,
             "money": agent.money,
             "mood": agent.mood
         })

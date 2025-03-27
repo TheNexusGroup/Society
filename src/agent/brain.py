@@ -19,7 +19,7 @@ class AgentBrain:
         self.update_counter = 0
         
         # State encoding parameters
-        self.state_size = 12  # 4 state variables with 3 possible values each
+        self.state_size = 9  # 3 state variables with 3 possible values each
         self.action_size = len(ActionType)
         
         # Memory system
@@ -47,7 +47,7 @@ class AgentBrain:
     def q_learning_decision(self, state_dict, exploration_rate):
         """Use Q-learning to decide action"""
         # Create state string key
-        state_key = f"{state_dict['hunger']}_{state_dict['energy']}_{state_dict['money']}_{state_dict['mood']}"
+        state_key = f"{state_dict['energy']}_{state_dict['money']}_{state_dict['mood']}"
         
         # Initialize Q-values for this state if needed
         if state_key not in self.genome.q_table:
@@ -108,23 +108,21 @@ class AgentBrain:
     
     def _state_dict_to_string(self, state_dict):
         """Convert state dictionary to string representation"""
-        hunger_level = state_dict.get('hunger', 'medium')
         energy_level = state_dict.get('energy', 'medium')
         money_level = state_dict.get('money', 'medium')
         mood_level = state_dict.get('mood', 'neutral')
-        return f"{hunger_level}_{energy_level}_{money_level}_{mood_level}"
+        return f"{energy_level}_{money_level}_{mood_level}"
     
     def _state_string_to_dict(self, state_str):
         """Convert state string to dictionary"""
         parts = state_str.split('_')
         if len(parts) != 4:
-            return {'hunger': 'medium', 'energy': 'medium', 'money': 'medium', 'mood': 'neutral'}
+            return {'energy': 'medium', 'money': 'medium', 'mood': 'neutral'}
         
         return {
-            'hunger': parts[0],
-            'energy': parts[1],
-            'money': parts[2],
-            'mood': parts[3]
+            'energy': parts[0],
+            'money': parts[1],
+            'mood': parts[2]
         }
 
     def select_navigation_target(self, current_position, possible_targets, target_type):

@@ -10,6 +10,7 @@ from .entity.factory import EntityFactory
 from src.population.society import Society
 from src.population.reproduction import ReproductionSystem
 from ..agent.navigation import NavigationSystem
+from src.logging.metrics import MetricsCollector
 import random
 
 class World:
@@ -22,6 +23,9 @@ class World:
         self.food_count = 5
         self.work_count = 3
         self.world_screen = None  # Will be set by Simulation
+        
+        # Initialize metrics collector
+        self.metrics = MetricsCollector()
         
         # Initialize ECS world
         self.ecs = ECS()
@@ -92,7 +96,9 @@ class World:
             self.population.append(agent)
 
     def create_food(self):
-        for i in range(self.food_count):
+        # Only create food if we don't have enough
+        current_food_count = sum(1 for e in self.entities if e.entity_type == EntityType.FOOD)
+        for i in range(current_food_count, self.food_count):
             food = self.entity_factory.create_entity(
                 EntityType.FOOD,
                 (random.randint(0, self.width), random.randint(0, self.height)),
@@ -101,7 +107,9 @@ class World:
             self.entities.append(food)
 
     def create_work(self):
-        for i in range(self.work_count):
+        # Only create workplaces if we don't have enough
+        current_work_count = sum(1 for e in self.entities if e.entity_type == EntityType.WORK)
+        for i in range(current_work_count, self.work_count):
             workplace = self.entity_factory.create_entity(
                 EntityType.WORK,
                 (random.randint(0, self.width), random.randint(0, self.height)),
@@ -181,7 +189,6 @@ class World:
                     state="idle",
                     properties={
                         "energy": entity.energy,
-                        "hunger": entity.hunger,
                         "money": entity.money,
                         "mood": entity.mood
                     }
@@ -206,6 +213,48 @@ class World:
     def update_world(self):
         # Update the ECS world instead of individual entities
         self.ecs.update(1.0)  # Using 1.0 as a fixed delta time
+        
+        # Update metrics
+        self.collect_metrics()
+
+    def collect_metrics(self):
+        """Collect current world state metrics"""
+        # Count males and females
+        males = sum(1 for agent in self.population if agent.genome.gender.value == 'Male')
+        females = len(self.population) - males
+        
+        # Calculate agent averages
+        avg_age = avg_energy = avg_money = avg_mood = 0
+        if self.population:
+            avg_age = sum(agent.age for agent in self.population) / len(self.population)
+            avg_energy = sum(agent.energy for agent in self.population) / len(self.population)
+            avg_money = sum(agent.money for agent in self.population) / len(self.population)
+            avg_mood = sum(agent.mood for agent in self.population) / len(self.population)
+            
+        # Count actions
+        action_counts = {'eat': 0, 'work': 0, 'rest': 0, 'mate': 0, 'search': 0}
+        for agent in self.population:
+            if agent.current_action and agent.current_action.value in action_counts:
+                action_counts[agent.current_action.value] += 1
+                
+        # Update metrics collector
+        self.metrics.collect({
+            'population_size': len(self.population),
+            'male_count': males,
+            'female_count': females,
+            'food_count': sum(1 for e in self.entities if e.entity_type == EntityType.FOOD),
+            'work_count': sum(1 for e in self.entities if e.entity_type == EntityType.WORK),
+            'avg_age': avg_age,
+            'avg_energy': avg_energy,
+            'avg_money': avg_money,
+            'avg_mood': avg_mood,
+            'action_eat': action_counts['eat'],
+            'action_work': action_counts['work'],
+            'action_rest': action_counts['rest'],
+            'action_mate': action_counts['mate'],
+            'action_search': action_counts['search'],
+            'epoch': self.society.epoch
+        })
 
     def get_entity_by_id(self, entity_id):
         """Find an entity by its ECS ID"""

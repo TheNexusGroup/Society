@@ -108,7 +108,6 @@ class EntityFactory:
                     state="idle",
                     properties={
                         "energy": entity.energy,
-                        "hunger": entity.hunger,
                         "money": entity.money,
                         "mood": entity.mood
                     }
