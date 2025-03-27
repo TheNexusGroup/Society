@@ -104,20 +104,46 @@ Genome:
 
 ## Agentic Growth System Design and File Hierarchy
 src/
-|-- engine/            # (existing) Core simulation engine
-|-- population/        # Population management systems
-|   |-- genome.py      # Genome definition and genetic operations
-|   |-- q_learning.py  # Q-learning implementation 
-|   |-- society.py     # Society management and agent interactions
-|   |-- evolution.py   # Genetic algorithm, selection, and epochs
-|   |-- reproduction.py# Mating mechanics and offspring creation
-|   |-- metrics.py     # Tracking population metrics
-|-- agent/             # Extended agent implementation
-|   |-- behavior.py    # Complex behaviors beyond basic actions
-|   |-- navigation.py  # Movement and spatial exploration
-|   |-- memory.py      # Experience memory for learning
-|   |-- network.py     # Neural network implementation (optional)
-|-- logging/           # (existing) Logging and metrics
-|-- ui/                # Visualization and UI components
-    |-- charts.py      # Statistical visualization
-    |-- info_panel.py  # Agent information display
+|-- engine/                  # Core simulation engine components
+|   |-- engine.py            # Main simulation engine class
+|   |-- world.py             # World state management and entity tracking
+|   |-- entity/              # Entity-related classes
+|   |   |-- entity.py        # Base entity implementation with rendering support
+|   |   |-- types.py         # Specific entity type implementations (Agent, Food, etc.)
+|   |   |-- factory.py       # Factory pattern for entity creation
+|   |   |-- pool.py          # Object pooling for entity reuse
+|   |-- assets/              # Asset management system
+|   |   |-- manager.py       # Central asset loading and caching
+|   |   |-- asset.py         # Base asset class
+|   |   |-- animation.py     # Animation sequence handling
+|   |-- ecs/                 # Entity Component System
+|   |   |-- core.py          # Main ECS container and management
+|   |   |-- components.py    # Component definitions (Transform, Render, etc.)
+|   |   |-- system.py        # System implementations for processing components
+|   |   |-- entities.py      # ECS entity definitions
+|   |-- renderer/            # Rendering system
+|   |   |-- manager.py       # Rendering optimization (batching, dirty rectangles)
+|   |-- spatial_system/      # Spatial partitioning for entity queries
+|       |-- grid.py          # Spatial grid implementation
+|       |-- system.py        # Spatial query system (nearest entities, etc.)
+|-- population/              # Population management systems
+|   |-- genome.py            # Genetic representation and operations
+|   |-- q_learning.py        # Q-learning implementation for agent decision-making
+|   |-- society.py           # Society management and inter-agent interactions
+|   |-- evolution.py         # Genetic algorithm implementation for selection/evolution
+|   |-- reproduction.py      # Mating mechanics and offspring creation
+|   |-- metrics.py           # Population statistics tracking
+|-- agent/                   # Agent implementation
+|   |-- behavior.py          # Agent behavior system and action execution
+|   |-- navigation.py        # Movement and spatial exploration
+|   |-- memory.py            # Experience memory for learning (Replay buffers)
+|   |-- network.py           # Neural network implementation for deep learning
+|   |-- brain.py             # Decision-making system combining Q-learning and neural nets
+|-- logging/                 # Logging and metrics collection
+|   |-- metrics.py           # Statistical data collection and analysis
+|-- ui/                      # Visualization and UI components
+|   |-- charts.py            # Statistical charts and graphs
+|   |-- info_panel.py        # Agent information display
+|-- constants.py             # Global constants, enums, and configuration
+|
+|-- main.py                  # Application entry point
