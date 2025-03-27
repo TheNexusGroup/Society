@@ -139,3 +139,9 @@ class AssetManager:
             "position": position,
             "name": animation_name
         }
+
+    def clear_cache(self):
+        """Clear all cached assets to free memory between epochs"""
+        self.images.clear()
+        self.animations.clear()
+        self.assets.clear()

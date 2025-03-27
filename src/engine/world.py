@@ -213,3 +213,27 @@ class World:
             if hasattr(entity, 'ecs_id') and entity.ecs_id == entity_id:
                 return entity
         return None
+
+    def reset_world(self):
+        """Reset the world state between epochs"""
+        # Clear all entities from the world
+        entities_to_remove = self.entities.copy()
+        for entity in entities_to_remove:
+            self.remove_entity(entity)
+        
+        # Clear entity lists
+        self.entities = []
+        self.population = []
+        
+        # Reset the ECS world
+        self.ecs = ECS()
+        
+        # Reset spatial grid
+        self.spatial_grid = SpatialGrid(self.width, self.height)
+        
+        # Reset entity pools
+        for pool in self.entity_pools.values():
+            pool.clear()
+        
+        # Re-setup systems with the new ECS world
+        self.setup_systems()

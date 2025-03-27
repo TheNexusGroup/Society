@@ -177,12 +177,17 @@ class Society:
     def start_new_generation(self):
         """Initialize a new generation based on previous generation performance"""
         # Increment generation counter
-        self.generation += 1
+        self.generation += 1 # TODO: Change this to Epoch as a generation is part of a single epoch
         
         # Record metrics for previous generation
         self.metrics['population_size'].append(0)  # Final size was 0
         
-        # Reset the world by creating new resources
+        # Reset the world state
+        self.world.reset_world()
+        
+        # TODO: Implement Genetic Algorithm
+
+        # Create new resources
         for _ in range(self.world.food_count):
             self.world.create_food()
         
@@ -192,5 +197,8 @@ class Society:
         # Create new initial population
         initial_size = max(self.world.population_size, 10)  # Ensure minimum viable population
         self.initialize_population(initial_size)
+        
+        # Update society's population reference
+        self.population = self.world.population
         
         print(f"Generation {self.generation} started with {len(self.population)} agents")
