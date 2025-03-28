@@ -1,4 +1,4 @@
-# Society Simulation Design Document
+# Population Simulation Design Document
 
 ## Overview
 A society simulator using reinforcement learning and genetic algorithms where agents balance survival needs while having free agency to reproduce and evolve over generations.
@@ -14,6 +14,9 @@ Genome:
   - Energy - Determines the ability to do actions or die
   - Money - Determines the ability to buy food, and affects mating (or potentially requires working for it) - can be potentially inherited at a cost
   - Mood: Happiness (1) to Stress (-1)
+  - Generation - Determines the generation number of the agent
+  - Offspring_Generations - Determines the number of generations the agent has had offspring
+  - Offspring_Count - Determines the number of offspring the agent has had
 
 - **Derived Inherited Attributes**:
   - Metabolic rate - Determines the rate at which energy is consumed (factor of mating, higher metabolic means more food is required, but work is more effective)
@@ -72,7 +75,7 @@ Genome:
 2. **Social Interaction**: Mating mechanics and partner selection
 3. **Family Dynamics**: Child-rearing and resource allocation
 4. **Generational Evolution**: Genetic inheritance and mutation
-5. **Society Formation**: Emergence of cooperation and competition
+5. **Population Formation**: Emergence of cooperation and competition
 6. **Economic Emergence**: Development of business and trade without instruction
 
 ## Societal Factors
@@ -95,57 +98,35 @@ Genome:
 ## TODO:
  - [ ] Add a health/energy/money/mood BAR/GRAPH/CHART/etc.
  - [ ] Add a UI for simulation stats
- - [ ] Add a logging system for ongoing statistics, which can later be used for graphing results
+   - [ ] Toggle Panel to Open and Close + Tabs
+   - [ ] Add Info Panel for entire Epoch
+   - [ ] Add Info Panel for Learning Models
+   - [ ] Add Info Panel for Agent Specific Stats for selected agent
+   - [ ] Neural Network Visualization Panel for selected agent
+    - [ ] Action Network
+    - [ ] Target Network
+ 
  - [X] Clear old assets on each epoch
- - [ ] Change animations based on behaviors
- - [ ] Have agents 'go to work' at the work place with animation of 'working'
- - [ ] Add 'mating' animation when 2 agents are mating
-
-## Agentic Growth System Design and File Hierarchy
-src/
-|-- engine/                  # Core simulation engine components
-|   |-- engine.py            # Main simulation engine class
-|   |-- world.py             # World state management and entity tracking
-|   |-- entity/              # Entity-related classes
-|   |   |-- entity.py        # Base entity implementation with rendering support
-|   |   |-- types.py         # Specific entity type implementations (Agent, Food, etc.)
-|   |   |-- factory.py       # Factory pattern for entity creation
-|   |   |-- pool.py          # Object pooling for entity reuse
-|   |-- assets/              # Asset management system
-|   |   |-- manager.py       # Central asset loading and caching
-|   |   |-- asset.py         # Base asset class
-|   |   |-- animation.py     # Animation sequence handling
-|   |-- ecs/                 # Entity Component System
-|   |   |-- core.py          # Main ECS container and management
-|   |   |-- components.py    # Component definitions (Transform, Render, etc.)
-|   |   |-- system.py        # System implementations for processing components
-|   |   |-- entities.py      # ECS entity definitions
-|   |-- renderer/            # Rendering system
-|   |   |-- manager.py       # Rendering optimization (batching, dirty rectangles)
-|   |-- spatial_system/      # Spatial partitioning for entity queries
-|       |-- grid.py          # Spatial grid implementation
-|       |-- system.py        # Spatial query system (nearest entities, etc.)
-|-- population/              # Population management systems
-|   |-- genome.py            # Genetic representation and operations
-|   |-- q_learning.py        # Q-learning implementation for agent decision-making # These Q-Tables should be unique for each agent
-|   |-- society.py           # Society management and inter-agent interactions
-|   |-- evolution.py         # Genetic algorithm implementation for selection/evolution
-|   |-- reproduction.py      # Mating mechanics and offspring creation
-|   |-- metrics.py           # Population statistics tracking
-|-- agent/                   # Agent implementation
-|   |-- behavior.py          # Agent behavior system and action execution
-|   |-- navigation.py        # Movement and spatial exploration
-|   |-- memory.py            # Experience memory for learning (Replay buffers)  - # These should NOT be passed down to offspring
-|   |-- network.py           # Neural network implementation for deep learning  - # These should be passed down to offspring
-|   |-- brain.py             # Decision-making system combining Q-learning and neural nets
-|-- logging/                 # Logging and metrics collection
-|   |-- metrics.py           # Statistical data collection and analysis
-|-- ui/                      # Visualization and UI components
-|   |-- charts.py            # Statistical charts and graphs
-|   |-- info_panel.py        # Agent information display
-|-- constants.py             # Global constants, enums, and configuration
-|
-|-- main.py                  # Application entry point
+ - [X] Change animations based on behaviors
+  - [ ] Add 'mating' animation when 2 agents are mating
+  - [ ] Add 'working' animation when an agent is working at a business
+  - [ ] Add 'eating' animation when an agent is eating versus acquiring food
+    - [ ] Storing/Gathering Food should be different from Eating Food - Seperate Actions
+ - [ ] When an agent is dead, other agents within their proximity should have a negative mood affection
+ - [X] Want to build trust networks, and establish some prisoner's dilemma type interactions
+ - [ ] Mating with a descendant of your own family should have a negative mutation effect
+ - [X] Food should be able to be bought from a business, if there are agents working there
+ - [X] Businesses should be able to go bankrupt if they have a negative expense : income ratio
+ - [X] Change behavior of food to farm, and add planting/harvesting abilities
+ - [X] Change food behavior to 'acquire', 'eat', and 'trade'
+ - [X] Allow trading between individuals, and businesses
+ - [X] Businesses should require inventory, and employees
+ - [X] Individuals can be 'investors' to 'buy' inventory for a business and pay employees, and gain a percentage of the profit
+ - [X] Determine aspect of how agents can 'invest' in businesses
+ - [ ] Iterative Learning Model
+   - [ ] Add a logging system for ongoing statistics, which can later be used for graphing results
+   - [ ] Modify our workflow to allow for every 10 epochs to be logged via metrics
+   - [ ] Modify our display system to only display every 100 epochs
 
 
 New System Design
@@ -193,7 +174,7 @@ src/
 |   |   |-- genome.py                   # Genetic representation
 |   |   |-- evolution.py                # Selection and evolution algorithms
 |   |   |-- reproduction.py             # Mating mechanics
-|   |-- society/                        # Society-level systems
+|   |-- society/                        # Population-level systems
 |       |-- population.py               # Population management
 |       |-- economy.py                  # Economic systems
 |-- ui/                                 # User interface
@@ -202,7 +183,7 @@ src/
 |   |   |-- camera.py                   # Camera and viewport management
 |   |-- hud/                            # Heads-up display elements
 |   |   |-- entity_info.py              # Entity information display
-|   |   |-- stats_panel.py              # Simulation statistics
+|   |   |-- info_panel.py               # Simulation statistics
 |   |-- visualization/                  # Data visualization
 |       |-- charts.py                   # Statistical charting
 |       |-- graph.py                    # Network/relationship graphs

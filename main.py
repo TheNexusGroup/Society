@@ -1,4 +1,4 @@
-from src.engine.engine import Simulation
+from src.simulation.engine import Simulation
 
 if __name__ == "__main__":
     sim = Simulation()
