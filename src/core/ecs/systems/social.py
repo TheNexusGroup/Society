@@ -11,7 +11,7 @@ import math
 
 class SocialSystem(System):
     def __init__(self, world):
-        super().__init__(world)
+        super().__init__(world, update_frequency=3)  # Update every 3rd frame for performance
         self.world = world
         self.interaction_types = {
             # Positive interactions

@@ -1,4 +1,5 @@
 import random
+import time
 from ..memory import AgentMemory
 from .network import DQNetwork
 from constants import ActionType
@@ -27,8 +28,10 @@ class AgentBrain:
         # Neural networks for reinforcement learning - always initialize
         self.dqn = DQNetwork(self.state_size, self.action_size, learning_rate=self.learning_rate)
         
-        # Initialize social memory
+        # Initialize social memory with bounded capacity
         self.social_memory = {}
+        self.max_social_memory_per_agent = 10  # Limit memories per agent
+        self.max_total_social_agents = 50  # Limit total agents remembered
         
         # Complete action map for consistency
         self.action_map = {
@@ -178,6 +181,14 @@ class AgentBrain:
         # Update counter for target network update
         self.update_counter += 1
         
+        # Periodically clean up social memory based on alive agents
+        if self.update_counter % 100 == 0 and self.world:  # Every 100 learning cycles
+            try:
+                alive_agent_ids = {agent.ecs_id for agent in self.world.society.population if agent.is_alive}
+                self.update_social_memory(alive_agent_ids)
+            except Exception as e:
+                print(f"Warning: Could not clean up social memory: {e}")
+        
         # Sample experiences for learning
         experiences = self.memory.sample_experiences(self.batch_size)
         if not experiences or len(experiences) == 0:
@@ -253,21 +264,41 @@ class AgentBrain:
     
     def store_social_memory(self, target_id, action, successful, importance):
         """Store memory of social interaction with another agent"""
+        # Check if we need to remove old agents to stay within limit
+        if target_id not in self.social_memory and len(self.social_memory) >= self.max_total_social_agents:
+            # Remove the agent with the lowest average importance
+            least_important_agent = min(self.social_memory.keys(), 
+                                      key=lambda agent: sum(mem['importance'] for mem in self.social_memory[agent]) / len(self.social_memory[agent]))
+            del self.social_memory[least_important_agent]
+        
         if target_id not in self.social_memory:
             self.social_memory[target_id] = []
         
-        # Store the interaction memory
+        # Store the interaction memory with timestamp for LRU eviction
         memory = {
             'action': action,
             'successful': successful,
-            'importance': importance
+            'importance': importance,
+            'timestamp': time.time()
         }
         self.social_memory[target_id].append(memory)
         
-        # Keep only the most important/recent memories
-        if len(self.social_memory[target_id]) > 5:
-            self.social_memory[target_id].sort(key=lambda x: x['importance'], reverse=True)
-            self.social_memory[target_id] = self.social_memory[target_id][:5]
+        # Keep only the most important/recent memories (LRU with importance weighting)
+        if len(self.social_memory[target_id]) > self.max_social_memory_per_agent:
+            # Sort by importance first, then by recency for ties
+            self.social_memory[target_id].sort(key=lambda x: (x['importance'], x['timestamp']), reverse=True)
+            self.social_memory[target_id] = self.social_memory[target_id][:self.max_social_memory_per_agent]
+    
+    def cleanup_dead_agent_memories(self, dead_agent_ids):
+        """Remove memories of dead agents to prevent memory leaks"""
+        for dead_id in dead_agent_ids:
+            if dead_id in self.social_memory:
+                del self.social_memory[dead_id]
+    
+    def update_social_memory(self, alive_agent_ids):
+        """Update social memory, removing references to dead agents"""
+        dead_agents = [agent_id for agent_id in self.social_memory.keys() if agent_id not in alive_agent_ids]
+        self.cleanup_dead_agent_memories(dead_agents)
     
     def get_memories_about(self, agent_id):
         """Retrieve memories about a specific agent"""

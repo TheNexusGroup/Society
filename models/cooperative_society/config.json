@@ -1,0 +1,6 @@
+{
+  "population_size": 75,
+  "learning_rate": 0.15,
+  "exploration_rate": 0.2,
+  "social_bonus": 1.5
+}

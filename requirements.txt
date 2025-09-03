@@ -1,0 +1,40 @@
+# Society Simulation Requirements
+
+# Core simulation dependencies
+pygame==2.6.1
+numpy==2.3.2
+psutil==7.0.0
+
+# Machine Learning
+torch==2.4.1
+torchvision==0.19.1
+scikit-learn==1.5.2
+
+# Backend server
+fastapi==0.115.0
+uvicorn==0.31.0
+websockets==13.1
+pydantic==2.9.2
+python-multipart==0.0.12
+
+# Data handling
+pandas==2.2.3
+h5py==3.12.1
+aiofiles==24.1.0
+
+# Monitoring and logging
+prometheus-client==0.21.0
+structlog==24.4.0
+
+# Development and testing (optional for production)
+pytest==8.4.1
+pytest-asyncio==0.24.0
+pytest-benchmark==5.1.0
+black==24.10.0
+flake8==7.1.1
+
+# Optional: GPU acceleration
+# torch-cuda (uncomment if GPU available)
+
+# Web client dependencies (if building client in container)
+# node (handled by multi-stage build if needed)

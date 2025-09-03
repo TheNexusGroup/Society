@@ -1,0 +1,126 @@
+{
+  "baseline_society": {
+    "created": "2025-09-02T23:07:23.298687",
+    "description": "Baseline society with default parameters",
+    "config": {
+      "population_size": 50,
+      "learning_rate": 0.1,
+      "exploration_rate": 0.3
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-02T23:07:23.298694"
+  },
+  "aggressive_society": {
+    "created": "2025-09-02T23:07:23.298926",
+    "description": "Society with aggressive economic parameters",
+    "config": {
+      "population_size": 100,
+      "learning_rate": 0.2,
+      "exploration_rate": 0.5,
+      "wage_multiplier": 2.0
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-02T23:07:23.298928"
+  },
+  "cooperative_society": {
+    "created": "2025-09-02T23:07:23.299223",
+    "description": "Society with enhanced social cooperation",
+    "config": {
+      "population_size": 75,
+      "learning_rate": 0.15,
+      "exploration_rate": 0.2,
+      "social_bonus": 1.5
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-02T23:07:23.299226"
+  },
+  "baseline_society_20250902_230737": {
+    "created": "2025-09-02T23:07:37.963213",
+    "description": "Baseline society with default parameters",
+    "config": {
+      "population_size": 50,
+      "learning_rate": 0.1,
+      "exploration_rate": 0.3
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-02T23:07:37.963217"
+  },
+  "aggressive_society_20250902_230737": {
+    "created": "2025-09-02T23:07:37.963541",
+    "description": "Society with aggressive economic parameters",
+    "config": {
+      "population_size": 100,
+      "learning_rate": 0.2,
+      "exploration_rate": 0.5,
+      "wage_multiplier": 2.0
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-02T23:07:37.963543"
+  },
+  "cooperative_society_20250902_230737": {
+    "created": "2025-09-02T23:07:37.964035",
+    "description": "Society with enhanced social cooperation",
+    "config": {
+      "population_size": 75,
+      "learning_rate": 0.15,
+      "exploration_rate": 0.2,
+      "social_bonus": 1.5
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-02T23:07:37.964037"
+  },
+  "baseline_v1": {
+    "created": "2025-09-02T23:07:56.993332",
+    "description": "Baseline society configuration",
+    "config": {
+      "population_size": 50,
+      "learning_rate": 0.1,
+      "exploration_rate": 0.3,
+      "economic_focus": "balanced"
+    },
+    "checkpoints": [],
+    "current_iteration": 50,
+    "total_iterations": 50,
+    "last_modified": "2025-09-02T23:07:56.993340"
+  },
+  "aggressive_v1": {
+    "created": "2025-09-02T23:07:56.993697",
+    "description": "High competition society",
+    "config": {
+      "population_size": 100,
+      "learning_rate": 0.2,
+      "exploration_rate": 0.5,
+      "economic_focus": "competitive"
+    },
+    "checkpoints": [],
+    "current_iteration": 25,
+    "total_iterations": 25,
+    "last_modified": "2025-09-02T23:07:56.993700"
+  },
+  "cooperative_v1": {
+    "created": "2025-09-02T23:07:56.994079",
+    "description": "Cooperative focused society",
+    "config": {
+      "population_size": 75,
+      "learning_rate": 0.15,
+      "exploration_rate": 0.2,
+      "economic_focus": "cooperative"
+    },
+    "checkpoints": [],
+    "current_iteration": 35,
+    "total_iterations": 35,
+    "last_modified": "2025-09-02T23:07:56.994082"
+  }
+}

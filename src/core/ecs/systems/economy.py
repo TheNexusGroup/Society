@@ -5,7 +5,7 @@ from ..components.wallet import WalletComponent
 
 class EconomicSystem(System):
     def __init__(self, world):
-        super().__init__(world)
+        super().__init__(world, update_frequency=2)  # Update every 2nd frame for performance
         self.world = world
         
     def update(self, delta_time):

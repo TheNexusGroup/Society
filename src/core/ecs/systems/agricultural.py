@@ -4,7 +4,7 @@ from ..system import System
 
 class AgriculturalSystem(System):
     def __init__(self, world):
-        super().__init__(world)
+        super().__init__(world, update_frequency=4)  # Update every 4th frame - agriculture is slow
         self.world = world
         self.growth_cycles = {}  # Track growth for farms {farm_id: current_cycle}
         

@@ -103,43 +103,57 @@ class RenderManager:
                 for rect in merged_rects:
                     self.screen.blit(self.background, rect, rect)
         
-        # Sort batches by entity tag type (dead agents first, then food/work, then living agents)
-        # This ensures proper rendering order (dead agents on bottom, living ones on top)
+        # Sort batches by z-order based on entity type and position
+        # This ensures proper rendering order without sprites disappearing
         def sort_key(batch_item):
             texture_id = batch_item[0]
             entity_id = texture_id[1] if isinstance(texture_id, tuple) and len(texture_id) > 1 else 0
             
-            # Get tag component to determine render order
-            tag_comp = self.world.get_component(entity_id, "tag") if hasattr(self, 'world') else None
-            behavior_comp = self.world.get_component(entity_id, "behavior") if hasattr(self, 'world') else None
+            # Get components to determine render order
+            if hasattr(self, 'world') and self.world:
+                tag_comp = self.world.get_component(entity_id, "tag")
+                behavior_comp = self.world.get_component(entity_id, "behavior")
+                transform_comp = self.world.get_component(entity_id, "transform")
+                
+                # Base z-order by entity type
+                z_order = 1000  # Default middle layer
+                
+                if behavior_comp and behavior_comp.state == "dead":
+                    z_order = 0  # Dead agents at bottom
+                elif tag_comp:
+                    if tag_comp.tag == "farm":
+                        z_order = 100  # Farms at bottom
+                    elif tag_comp.tag == "workplace":
+                        z_order = 200  # Workplaces next
+                    elif tag_comp.tag == "food":
+                        z_order = 500  # Food items middle
+                    elif tag_comp.tag == "agent":
+                        # Living agents sorted by Y position for depth
+                        if transform_comp:
+                            z_order = 1000 + transform_comp.position[1]
+                        else:
+                            z_order = 1000
+                
+                return (z_order, entity_id)  # Secondary sort by entity ID for consistency
             
-            # Render order: dead agents (0), food/work (1), living agents (2)
-            if tag_comp and tag_comp.tag == "agent" and behavior_comp and behavior_comp.properties.get("is_alive") is False:
-                return 0  # Dead agents at bottom
-            elif tag_comp and tag_comp.tag in ["food", "work"]:
-                return 1  # Food and work in middle
-            else:
-                return 2  # Living agents on top
+            return (1000, entity_id)
         
-        # Sort batches by z-order if we have world reference, otherwise use entity_id
-        if hasattr(self, 'world'):
-            sorted_batches = sorted(self.batches.items(), key=sort_key)
-        else:
-            # Fallback to simple entity ID sorting
-            sorted_batches = sorted(self.batches.items(), key=lambda x: x[0][1] if isinstance(x[0], tuple) and len(x[0]) > 1 else 0)
+        # Sort batches by z-order for proper layering
+        sorted_batches = sorted(self.batches.items(), key=sort_key)
         
         # Render each batch (grouped by texture)
         for texture_id, draw_info in sorted_batches:
             # Get the texture
             texture = texture_id[0] if isinstance(texture_id, tuple) else texture_id
             
-            # Use more efficient blits for multiple sprites with same texture
-            if len(draw_info) > 1:
-                self.screen.blits([(texture, dest_rect, source_rect) 
-                                 for source_rect, dest_rect in draw_info])
-            elif draw_info:
-                source_rect, dest_rect = draw_info[0]
-                self.screen.blit(texture, dest_rect, source_rect)
+            # Draw sprites with proper transparency support
+            for source_rect, dest_rect in draw_info:
+                if source_rect:
+                    # Blit with source rectangle for sprite sheets
+                    self.screen.blit(texture, dest_rect, source_rect)
+                else:
+                    # Normal blit for full images
+                    self.screen.blit(texture, dest_rect)
         
         # Reset dirty rects for next frame
         self.dirty_rects = []

@@ -1,0 +1,52 @@
+{
+  "test_baseline": {
+    "created": "2025-09-03T00:42:29.798171",
+    "description": "Test baseline model",
+    "config": {
+      "population_size": 50,
+      "learning_rate": 0.1
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-03T00:42:29.798178"
+  },
+  "test_advanced": {
+    "created": "2025-09-03T00:42:29.798510",
+    "description": "Test advanced model",
+    "config": {
+      "population_size": 100,
+      "learning_rate": 0.2,
+      "exploration_rate": 0.3
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-03T00:42:29.798515"
+  },
+  "test_baseline_20250903_004257": {
+    "created": "2025-09-03T00:42:57.083996",
+    "description": "Test baseline model",
+    "config": {
+      "population_size": 50,
+      "learning_rate": 0.1
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-03T00:42:57.084002"
+  },
+  "test_advanced_20250903_004257": {
+    "created": "2025-09-03T00:42:57.084469",
+    "description": "Test advanced model",
+    "config": {
+      "population_size": 100,
+      "learning_rate": 0.2,
+      "exploration_rate": 0.3
+    },
+    "checkpoints": [],
+    "current_iteration": 0,
+    "total_iterations": 0,
+    "last_modified": "2025-09-03T00:42:57.084472"
+  }
+}

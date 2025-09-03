@@ -322,7 +322,7 @@ class World:
             for farm in farms:
                 farm_comp = self.ecs.get_component(farm.ecs_id, "farm")
                 if farm_comp:
-                    farm_yields.append(farm_comp.yield_amount)
+                    farm_yields.append(farm_comp.calculate_yield_amount())
             
             if farm_yields:
                 avg_farm_yield = sum(farm_yields) / len(farm_yields)
@@ -345,7 +345,7 @@ class World:
             if workplace_comp:
                 total_workers += len(workplace_comp.workers)
                 total_capacity += workplace_comp.max_workers
-                total_productivity += workplace_comp.productivity
+                total_productivity += len(workplace_comp.workers) * 10  # Simple productivity calculation
                 total_wages_paid += workplace_comp.expenses
         
         employment_rate = total_workers / max(1, len(living_agents))

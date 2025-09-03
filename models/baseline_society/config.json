@@ -1,0 +1,5 @@
+{
+  "population_size": 50,
+  "learning_rate": 0.1,
+  "exploration_rate": 0.3
+}

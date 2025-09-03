@@ -29,6 +29,10 @@ class ECS:
             
             # Remove the entity
             del self.entities[entity_id]
+        
+    def remove_entity(self, entity_id: int):
+        """Alias for delete_entity for compatibility"""
+        return self.delete_entity(entity_id)
             
     def add_component(self, entity_id: int, component_type: str, component: Component):
         """Add a component to an entity"""

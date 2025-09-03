@@ -26,7 +26,13 @@ class AssetManager:
         if path not in self.images:
             try:
                 os.makedirs(os.path.dirname(path), exist_ok=True)
-                self.images[path] = pygame.image.load(path)
+                image = pygame.image.load(path)
+                # Convert to alpha for proper transparency support
+                if image.get_alpha() is not None or image.get_colorkey() is not None:
+                    image = image.convert_alpha()
+                else:
+                    image = image.convert()
+                self.images[path] = image
             except (FileNotFoundError, pygame.error):
                 self.images[path] = self._create_placeholder(50, 50)
         return self.images[path]
@@ -48,9 +54,9 @@ class AssetManager:
         return self.assets[path]
     
     def _create_placeholder(self, width, height) -> pygame.Surface:
-        surface = pygame.Surface((width, height))
-        surface.fill((100, 100, 100))
-        return surface
+        surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        surface.fill((100, 100, 100, 255))  # Fully opaque gray
+        return surface.convert_alpha()
     
     def scale_image(self, image: pygame.Surface, width: int, height: int) -> pygame.Surface:
         """Scale an image and return the result"""
@@ -75,6 +81,7 @@ class AssetManager:
                     )
                     sprite = pygame.Surface((sprite_width, sprite_height), pygame.SRCALPHA)
                     sprite.blit(spritesheet, (0, 0), rect)
+                    sprite = sprite.convert_alpha()  # Ensure proper alpha channel support
                     sprites.append(sprite)
             
             # Cache the animation with a meaningful key

@@ -1,0 +1,28 @@
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+pytest-benchmark>=4.0.0
+pytest-timeout>=2.1.0
+pytest-xdist>=3.3.1
+pytest-html>=3.2.0
+pytest-asyncio>=0.21.1
+
+# Memory profiling for leak detection
+memory-profiler>=0.61.0
+psutil>=5.9.5
+
+# Data generation and fixtures
+factory-boy>=3.3.0
+Faker>=19.3.0
+
+# Performance monitoring
+py-spy>=0.3.14
+
+# Test data validation
+hypothesis>=6.82.0
+pydantic>=2.1.1
+
+# Mock external dependencies
+responses>=0.23.3
+freezegun>=1.2.2

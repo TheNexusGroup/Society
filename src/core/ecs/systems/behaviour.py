@@ -6,9 +6,33 @@ from ..system import System
 
 class BehaviorSystem(System):
     def __init__(self, world):
-        super().__init__(world)
+        super().__init__(world, update_frequency=1)  # Critical system - update every frame
         self.world = world
         self.q_learning = QLearningSystem()
+        
+        # Reward normalization constants for consistent scaling
+        self.REWARD_SCALES = {
+            'eat': {'min': -0.5, 'max': 2.0, 'base': 1.0},
+            'work': {'min': -1.0, 'max': 2.0, 'base': 1.0},  
+            'rest': {'min': 0.0, 'max': 1.5, 'base': 0.8},
+            'mate': {'min': -0.1, 'max': 3.0, 'base': 1.5},
+            'search': {'min': -0.3, 'max': 0.5, 'base': 0.2},
+            'plant': {'min': -0.5, 'max': 1.5, 'base': 1.0},
+            'harvest': {'min': -0.5, 'max': 2.5, 'base': 1.5},
+            'gift': {'min': -0.2, 'max': 1.0, 'base': 0.5},
+            'trade': {'min': -0.3, 'max': 1.5, 'base': 0.8},
+            'invest': {'min': -0.2, 'max': 1.0, 'base': 0.4},
+            'buy': {'min': -0.5, 'max': 1.0, 'base': 0.4},
+            'sell': {'min': -0.3, 'max': 1.2, 'base': 0.6}
+        }
+    
+    def normalize_reward(self, action_category, raw_reward):
+        """Normalize rewards to ensure consistency across actions"""
+        if action_category not in self.REWARD_SCALES:
+            return max(-1.0, min(2.0, raw_reward))  # Default clamp
+        
+        scales = self.REWARD_SCALES[action_category]
+        return max(scales['min'], min(scales['max'], raw_reward))
         
     def get_state_representation(self, agent):
         energy_level = self._get_energy_level(agent.energy)
@@ -172,7 +196,7 @@ class BehaviorSystem(System):
                 memory_details = {'source': 'reserves', 'nutrition': removed_food}
                 agent.brain.memory.add_memory('ate_food', memory_details, importance)
             
-            return removed_food / 10  # Reward proportional to nutrition
+            return self.normalize_reward('eat', removed_food / 15)  # Normalize eating reward
         
         # If no food in reserves, look for food entities as before
         # (Rest of existing eat implementation)
@@ -233,7 +257,7 @@ class BehaviorSystem(System):
                         memory_details = {'position': food_transform.position, 'nutrition': nutrition}
                         agent.brain.memory.add_memory('found_food', memory_details, importance)
                         
-                    reward = nutrition / 10
+                    reward = self.normalize_reward('eat', nutrition / 15)  # Normalize eating reward
                 else:
                     # Navigate toward food
                     navigation.navigate_to_goal(agent, food_transform.position, speed_factor=1.2)
@@ -331,8 +355,8 @@ class BehaviorSystem(System):
                                     memory_details = {'position': workplace_transform.position, 'earnings': earnings}
                                     agent.brain.memory.add_memory('found_workplace', memory_details, importance)
                                 
-                                # Reward proportional to earnings
-                                reward = earnings / 10.0
+                                # Normalize work reward
+                                reward = self.normalize_reward('work', earnings / 5.0)
                             else:
                                 # Workplace cannot accept more workers
                                 return -0.5
@@ -364,7 +388,7 @@ class BehaviorSystem(System):
         
         # Calculate reward based on energy gained
         actual_gain = agent.energy - energy_before
-        reward = actual_gain / 20
+        reward = self.normalize_reward('rest', actual_gain * 15)  # Rest gives moderate but reliable reward
         
         # Update agent's behavior component
         behavior = self.world.ecs.get_component(agent.ecs_id, "behavior")
@@ -426,11 +450,11 @@ class BehaviorSystem(System):
                 offspring = reproduction_system.attempt_reproduction(agent, selected_mate)
                 
                 if offspring:
-                    # If successful reproduction, high reward
-                    reward = 5.0
+                    # If successful reproduction, high reward (normalized)
+                    reward = self.normalize_reward('mate', 3.0)
                 else:
                     # If mating but no reproduction, medium reward (social bonding)
-                    reward = 2.0
+                    reward = self.normalize_reward('mate', 1.5)
         else:
             # No compatible mates found, initiate search
             navigation = self.world.ecs.get_system("navigation")
@@ -463,7 +487,7 @@ class BehaviorSystem(System):
         # Net reward is exploration value minus energy cost
         reward = exploration_value - (energy_cost / 20)
         
-        return reward - (energy_cost / 10)  # Adjust reward based on energy cost
+        return self.normalize_reward('search', reward)  # Normalize search reward
     
     def _is_compatible_mate(self, agent, potential_mate):
         # Check if potential mate is compatible for mating (not necessarily reproduction)
@@ -653,10 +677,19 @@ class BehaviorSystem(System):
         agent = self.world.get_entity_by_id(entity_id)
         behavior = self.world.ecs.get_component(entity_id, "behavior")
 
+        # Skip processing if behavior is dead or agent doesn't exist
+        if not agent or not behavior:
+            return
+            
         if behavior.state == "dead":
             return
+            
+        # Skip processing dead agents
+        if hasattr(agent, 'is_alive') and not agent.is_alive:
+            behavior.state = "dead"
+            return
         
-        if not agent or not hasattr(agent, 'genome') or not behavior:
+        if not hasattr(agent, 'genome'):
             return
         
         # Initialize brain if needed
@@ -704,21 +737,48 @@ class BehaviorSystem(System):
         # Sync agent properties with behavior component
         self.sync_agent_with_component(agent, behavior)
         
-        # Check for death conditions - make more forgiving
-        if agent.energy <= 0 or agent.age > 200:
+        # Check for death conditions - ensure agents actually die
+        death_occurred = False
+        if agent.energy <= 0:
+            # Agent dies from starvation
             agent.is_alive = False
+            death_occurred = True
+            print(f"Agent {entity_id} died from starvation (energy: {agent.energy})")
+        elif agent.age > 200:
+            # Agent dies from old age
+            agent.is_alive = False
+            death_occurred = True
+            print(f"Agent {entity_id} died from old age (age: {agent.age})")
+        
+        if death_occurred:
+            # Update behavior to reflect death
+            behavior.state = "dead"
             
             # Update to show dead appearance
             if hasattr(agent, 'update_asset_based_on_state'):
                 agent.update_asset_based_on_state("dead")
             
-            # Don't remove immediately to allow death animation/state to be visible
-            # We'll remove after a delay or in the next epoch
-            # self.world.remove_entity(agent)
+            # Clean up agent's social memories in other agents' brains
+            if hasattr(self.world, 'society') and hasattr(self.world.society, 'population'):
+                for other_agent in self.world.society.population:
+                    if other_agent.is_alive and hasattr(other_agent, 'brain') and other_agent.brain:
+                        other_agent.brain.cleanup_dead_agent_memories([entity_id])
+            
+            # Remove from ECS systems immediately
+            # This ensures the dead agent won't be processed in future updates
+            try:
+                self.world.ecs.remove_entity(entity_id)
+                print(f"Agent {entity_id} removed from ECS")
+            except Exception as e:
+                print(f"Error removing dead agent {entity_id}: {e}")
             
             # Check if population is extinct
-            if all(not agent.is_alive for agent in self.world.society.population):
-                self.world.society.start_new_epoch()
+            if hasattr(self.world, 'society') and hasattr(self.world.society, 'population'):
+                if all(not agent.is_alive for agent in self.world.society.population):
+                    print("All agents are dead - starting new epoch")
+                    self.world.society.start_new_epoch()
+            
+            return  # Don't continue processing dead agent
         
         # Update behavior component with latest properties including is_alive status
         behavior_component = self.world.ecs.get_component(entity_id, "behavior")
@@ -841,7 +901,7 @@ class BehaviorSystem(System):
                             behavior.target = farm_id
                             behavior.properties["energy"] = agent.energy
                         
-                        reward = 1.0  # Positive reward for successful planting
+                        reward = self.normalize_reward('plant', 1.0)  # Positive reward for successful planting
                     else:
                         # Farm not in right state or agent doesn't have energy
                         reward = -0.2
@@ -992,7 +1052,7 @@ class BehaviorSystem(System):
                             agent.brain.memory.add_memory('gifted_food', memory_details, importance)
                         
                         # Positive reward for altruistic action
-                        reward = 0.5
+                        reward = self.normalize_reward('gift', 0.5)
                 else:
                     # Navigate toward target
                     navigation.navigate_to_goal(agent, target_transform.position)
@@ -1060,7 +1120,7 @@ class BehaviorSystem(System):
                         agent.brain.memory.add_memory('gifted_money', memory_details, importance)
                     
                     # Positive reward for altruistic action
-                    reward = 0.5
+                    reward = self.normalize_reward('gift', 0.5)
                 else:
                     # Navigate toward target
                     navigation.navigate_to_goal(agent, target_transform.position)
@@ -1143,7 +1203,7 @@ class BehaviorSystem(System):
                         agent.brain.memory.add_memory('invested', memory_details, importance)
                     
                     # Positive reward for investment
-                    reward = 0.3
+                    reward = self.normalize_reward('invest', 0.3)
                 else:
                     # Navigate toward workplace
                     navigation.navigate_to_goal(agent, workplace_transform.position)
@@ -1218,7 +1278,7 @@ class BehaviorSystem(System):
                             agent.brain.memory.add_memory('bought_food', memory_details, importance)
                         
                         # Positive reward for buying food
-                        reward = 0.4
+                        reward = self.normalize_reward('buy', 0.4)
                     else:
                         # Workplace out of stock
                         reward = -0.3
@@ -1295,7 +1355,7 @@ class BehaviorSystem(System):
                             agent.brain.memory.add_memory('sold_food', memory_details, importance)
                         
                         # Positive reward for selling
-                        reward = 0.5
+                        reward = self.normalize_reward('sell', 0.5)
                     else:
                         # Workplace doesn't have enough funds
                         reward = -0.2
@@ -1381,7 +1441,7 @@ class BehaviorSystem(System):
                             agent.brain.memory.add_memory('traded_food_for_money', memory_details, importance)
                         
                         # Positive reward for successful trade
-                        reward = 0.6
+                        reward = self.normalize_reward('trade', 0.6)
                     else:
                         # Target doesn't have enough money
                         reward = -0.2
@@ -1492,7 +1552,7 @@ class BehaviorSystem(System):
                                 )
                         
                         # Positive reward for successful trade
-                        reward = 0.6
+                        reward = self.normalize_reward('trade', 0.6)
                     else:
                         # Target doesn't have enough food
                         reward = -0.2
